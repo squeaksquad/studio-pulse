@@ -1951,7 +1951,8 @@ async function pushToGitHub() {
 
     let offlineHTML = _HTML_BEFORE + dataBlock + _HTML_AFTER;
 
-    // Inject light mode CSS (missing from _HTML_BEFORE template)
+    // 1. Inject light mode CSS — insert before the first </style> using slice
+    //    (avoids fragile whitespace-sensitive string matching)
     const lightCSS = `
 [data-theme="light"] {
   --bg: #f0f2f7; --surface: #ffffff; --surface2: #e8ebf2;
@@ -1968,34 +1969,30 @@ async function pushToGitHub() {
 }
 .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
 `;
-    offlineHTML = offlineHTML.replace('</style>\n</head>', lightCSS + '</style>\n</head>');
+    const styleCloseIdx = offlineHTML.indexOf('</style>');
+    if (styleCloseIdx !== -1) {
+      offlineHTML = offlineHTML.slice(0, styleCloseIdx) + lightCSS + offlineHTML.slice(styleCloseIdx);
+    }
 
-    // Inject theme toggle button into the header
-    offlineHTML = offlineHTML.replace(
-      '\u2b07 Export Snapshot',
-      '<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">Dark<\/button>\n    <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="exportSnapshot()">\u2b07 Export Snapshot'
-    );
+    // 2. Inject theme toggle button before the Export Snapshot button
+    //    Find the button by its unique onclick, then walk back to its opening <button tag
+    const exportOnclickIdx = offlineHTML.indexOf('onclick="exportSnapshot()"');
+    if (exportOnclickIdx !== -1) {
+      const btnOpenIdx = offlineHTML.lastIndexOf('<button', exportOnclickIdx);
+      if (btnOpenIdx !== -1) {
+        offlineHTML = offlineHTML.slice(0, btnOpenIdx) +
+          '<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">Dark</button>\n    ' +
+          offlineHTML.slice(btnOpenIdx);
+      }
+    }
 
-    // Inject toggleTheme function
-    const toggleFn = `
-function toggleTheme() {
-  var root = document.documentElement;
-  var isLight = root.getAttribute('data-theme') === 'light';
-  var next = isLight ? 'dark' : 'light';
-  if (next === 'dark') root.removeAttribute('data-theme');
-  else root.setAttribute('data-theme', 'light');
-  var btn = document.getElementById('theme-toggle');
-  if (btn) btn.textContent = next === 'light' ? 'Dark' : 'Light';
-  try { localStorage.setItem('sp-theme', next); } catch(e) {}
-}
-window.addEventListener('DOMContentLoaded', function() {
-  try {
-    var saved = localStorage.getItem('sp-theme');
-    if (saved === 'dark') { document.documentElement.removeAttribute('data-theme'); var btn = document.getElementById('theme-toggle'); if (btn) btn.textContent = 'Light'; }
-  } catch(e) {}
-});
-`;
-    offlineHTML = offlineHTML.replace('<\/script>\n<\/body>\n<\/html>', toggleFn + '<\/script>\n<\/body>\n<\/html>');
+    // 3. Inject toggleTheme as a SEPARATE <script> tag before </body>
+    //    Never touches the main script block — eliminates any risk of SyntaxError
+    const toggleScript = '<script>\nfunction toggleTheme(){var root=document.documentElement;var isLight=root.getAttribute(\'data-theme\')===\'light\';var next=isLight?\'dark\':\'light\';if(next===\'dark\')root.removeAttribute(\'data-theme\');else root.setAttribute(\'data-theme\',\'light\');var btn=document.getElementById(\'theme-toggle\');if(btn)btn.textContent=next===\'light\'?\'Dark\':\'Light\';try{localStorage.setItem(\'sp-theme\',next);}catch(e){}}\nwindow.addEventListener(\'DOMContentLoaded\',function(){try{var saved=localStorage.getItem(\'sp-theme\');if(saved===\'dark\'){document.documentElement.removeAttribute(\'data-theme\');var btn=document.getElementById(\'theme-toggle\');if(btn)btn.textContent=\'Light\';}}catch(e){}});\n<\/script>';
+    const bodyCloseIdx = offlineHTML.lastIndexOf('</body>');
+    if (bodyCloseIdx !== -1) {
+      offlineHTML = offlineHTML.slice(0, bodyCloseIdx) + toggleScript + '\n' + offlineHTML.slice(bodyCloseIdx);
+    }
 
     const res = await fetch(`${PULSE_WORKER_URL}/pulse/push`, {
       method: 'POST',
