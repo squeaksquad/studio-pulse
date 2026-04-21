@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudioPulse — Berklee</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Syne:wght@400;600;700;800&display=swap');
+
+:root {
+  --bg: #0d0f14;
+  --surface: #13161d;
+  --surface2: #1a1e28;
+  --border: #252a38;
+  --border2: #2e3448;
+  --accent: #4f8ef7;
+  --accent2: #7b5ea7;
+  --accent3: #e05c5c;
+  --accent4: #4abf8a;
+  --text: #e8ecf4;
+  --text2: #8892aa;
+  --text3: #525c72;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Syne', sans-serif;
+}
+[data-theme="light"] {
+  --bg: #f0f2f7;
+  --surface: #ffffff;
+  --surface2: #e8ebf2;
+  --border: #d0d5e3;
+  --border2: #b8bfd4;
+  --text: #1a1e2e;
+  --text2: #4a5270;
+  --text3: #8892aa;
+}
+[data-theme="light"] .dv-slot-label { color: #1a1e2e; }
+[data-theme="light"] .dv-slot-sub { color: rgba(26,30,46,0.6); }
+[data-theme="light"] .dv-slot.booked:hover { filter: brightness(0.93); }
+.theme-toggle {
+  background: var(--surface2); border: 1px solid var(--border2); color: var(--text2);
+  font-family: var(--mono); font-size: 11px; padding: 5px 10px; border-radius: 4px;
+  cursor: pointer; transition: border-color 0.15s, color 0.15s; white-space: nowrap;
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; min-height: 100vh; overflow-x: hidden; }
+
+.header { padding: 14px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; background: var(--surface); position: sticky; top: 0; z-index: 100; }
+.header-logo { font-family: var(--sans); font-weight: 800; font-size: 17px; letter-spacing: -0.5px; color: var(--text); }
+.header-logo span { color: var(--accent); }
+.header-sub { font-size: 10px; color: var(--text3); letter-spacing: 0.5px; font-family: var(--sans); font-weight: 600; text-transform: uppercase; }
+.badge { background: var(--surface2); border: 1px solid var(--border2); border-radius: 4px; padding: 3px 9px; font-size: 10px; color: var(--text2); }
+.badge.active { border-color: var(--accent); color: var(--accent); }
+.header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+.hdr-count { font-size: 11px; color: var(--text3); }
+
+.app { display: flex; height: calc(100vh - 52px); }
+
+/* Sidebar */
+.sidebar { width: 240px; min-width: 240px; background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+.sb-section { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.sb-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 9px; font-family: var(--sans); font-weight: 600; }
+.filter-group { display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow-y: auto; }
+.filter-row { display: flex; align-items: center; gap: 7px; padding: 4px 6px; border-radius: 4px; cursor: pointer; transition: background 0.1s; }
+.filter-row:hover { background: var(--surface2); }
+.filter-row input[type=checkbox] { accent-color: var(--accent); width: 12px; height: 12px; cursor: pointer; flex-shrink: 0; }
+.filter-row label { cursor: pointer; color: var(--text2); font-size: 11px; flex: 1; }
+.filter-count { font-size: 10px; color: var(--text3); }
+select, input[type=date] { width: 100%; background: var(--surface2); border: 1px solid var(--border2); color: var(--text); font-family: var(--mono); font-size: 11px; padding: 6px 8px; border-radius: 4px; outline: none; margin-bottom: 5px; }
+select { appearance: none; -webkit-appearance: none; }
+select:focus, input:focus { border-color: var(--accent); }
+.date-range { display: flex; flex-direction: column; gap: 4px; }
+.date-range input { margin-bottom: 0; }
+.btn { background: var(--accent); color: #fff; border: none; padding: 7px 12px; border-radius: 4px; font-family: var(--mono); font-size: 11px; cursor: pointer; width: 100%; transition: opacity 0.15s; font-weight: 500; }
+.btn:hover { opacity: 0.85; }
+.btn.secondary { background: var(--surface2); border: 1px solid var(--border2); color: var(--text2); }
+.btn.secondary:hover { border-color: var(--accent); color: var(--accent); }
+.upload-zone { border: 1.5px dashed var(--border2); border-radius: 6px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.15s; margin-bottom: 7px; }
+.upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(79,142,247,0.05); }
+.upload-zone .uz-icon { font-size: 18px; }
+.upload-zone .uz-text { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.upload-zone .uz-hint { font-size: 10px; color: var(--text3); margin-top: 3px; }
+input[type=file] { display: none; }
+
+/* Main */
+.main { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+.tab { padding: 8px 14px; font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; letter-spacing: 0.2px; }
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-panel { display: none; flex-direction: column; gap: 16px; }
+.tab-panel.active { display: flex; }
+
+/* Cards & stats */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 12px 14px; }
+.stat-card .accent-bar { height: 3px; border-radius: 2px; margin-bottom: 10px; }
+.stat-card .val { font-family: var(--sans); font-size: 24px; font-weight: 700; line-height: 1; }
+.stat-card .lbl { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 3px; font-family: var(--sans); }
+.stat-card .sub { font-size: 10px; color: var(--text2); margin-top: 4px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 16px 18px; }
+.section-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
+.section-title { font-family: var(--sans); font-size: 12px; font-weight: 700; color: var(--text); }
+.section-sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } }
+
+/* Bar chart */
+.bar-chart { display: flex; flex-direction: column; gap: 5px; }
+.bar-row { display: flex; align-items: center; gap: 7px; }
+.bar-label { width: 110px; font-size: 10px; color: var(--text2); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; height: 16px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+.bar-val { width: 42px; font-size: 10px; color: var(--text2); }
+
+/* Heatmap */
+.heatmap-wrap, .week-hm-wrap { overflow-x: auto; }
+.heatmap-table { border-collapse: collapse; }
+.heatmap-table th { color: var(--text3); font-weight: 600; padding: 0 2px 5px; font-family: var(--sans); font-size: 9px; letter-spacing: 0.4px; }
+.hm-cell { width: 26px; height: 20px; border-radius: 3px; cursor: default; transition: transform 0.1s; display: block; }
+.hm-cell:hover { transform: scale(1.25); }
+.hm-row-label { text-align: right; padding-right: 7px; color: var(--text3); font-size: 10px; white-space: nowrap; width: 36px; }
+.week-hm-table { border-collapse: collapse; }
+.week-hm-table th { font-size: 9px; color: var(--text3); padding: 0 2px 5px; font-family: var(--sans); font-weight: 600; }
+.week-hm-cell { width: 28px; height: 22px; border-radius: 3px; cursor: default; transition: transform 0.1s; display: block; }
+.week-hm-cell:hover { transform: scale(1.2); }
+.week-hm-room-label { text-align: right; padding-right: 7px; font-size: 10px; color: var(--text2); white-space: nowrap; }
+.hm-legend { display: flex; align-items: center; gap: 3px; margin-top: 8px; font-size: 10px; color: var(--text3); }
+.hm-legend-swatch { width: 14px; height: 9px; border-radius: 2px; }
+select.inline { width: auto; margin: 0; font-size: 10px; padding: 4px 7px; }
+
+/* Tooltip */
+.tooltip { position: fixed; background: var(--surface2); border: 1px solid var(--border2); border-radius: 5px; padding: 7px 10px; font-size: 10px; color: var(--text); pointer-events: none; z-index: 9999; display: none; line-height: 1.7; max-width: 180px; }
+.tooltip.show { display: block; }
+
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.data-table th { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--border); color: var(--text3); font-family: var(--sans); font-weight: 600; font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+.data-table th:hover { color: var(--text2); }
+.data-table td { padding: 6px 9px; border-bottom: 1px solid var(--border); color: var(--text2); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
+.pill { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 9px; border: 1px solid; }
+.util-meter { display: flex; align-items: center; gap: 5px; }
+.util-bar { flex: 1; height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; min-width: 40px; }
+.util-fill { height: 100%; border-radius: 3px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* Sort indicator */
+.sort-ind::after { content: ''; }
+th.sort-asc .sort-ind::after { content: ' ↑'; color: var(--accent); }
+th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
+
+/* Solo button */
+.solo-btn {
+  font-size: 9px; color: var(--text3); cursor: pointer; padding: 1px 4px;
+  border: 1px solid var(--border2); border-radius: 3px; flex-shrink: 0;
+  display: none; line-height: 1.4; font-family: var(--sans); font-weight: 600; letter-spacing: 0.3px;
+}
+.filter-row:hover .solo-btn { display: inline; }
+.solo-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Merge notice */
+#merge-notice { transition: opacity 1s ease; }
+
+/* Day View */
+.dv-nav { display:flex; align-items:center; gap:10px; }
+.dv-nav button { background:var(--surface2); border:1px solid var(--border2); color:var(--text2); font-family:var(--mono); font-size:12px; padding:5px 10px; border-radius:4px; cursor:pointer; }
+.dv-nav button:hover { border-color:var(--accent); color:var(--accent); }
+.dv-date-lbl { font-family:var(--sans); font-size:13px; font-weight:700; color:var(--text); min-width:160px; text-align:center; }
+.dv-date-input { background:var(--surface2); border:1px solid var(--border2); color:var(--text); font-family:var(--mono); font-size:11px; padding:4px 7px; border-radius:4px; outline:none; width:auto; margin:0; }
+.dv-date-input:focus { border-color:var(--accent); }
+.dv-no-data { color:var(--text3); font-size:12px; padding:24px 0; text-align:center; }
+.dv-wrap { overflow-x:auto; margin-top:4px; }
+.dv-table { border-collapse:collapse; min-width:100%; table-layout:fixed; }
+.dv-table th { font-family:var(--sans); font-size:9px; font-weight:600; color:var(--text3); padding:3px 3px 4px; border-bottom:1px solid var(--border); text-align:center; white-space:nowrap; letter-spacing:0.3px; }
+.dv-table th.dv-room-th { text-align:left; padding-left:8px; width:120px; min-width:120px; }
+.dv-table th.dv-now { color:var(--accent); border-bottom-color:var(--accent); }
+.dv-table td { padding:1px 0; vertical-align:middle; height:22px; }
+.dv-table tr { border-bottom:1px solid var(--border); height:22px; }
+.dv-table tr.dv-lane-cont { border-bottom:none; }
+.dv-table td.dv-room-cell { padding:1px 8px; font-size:10px; color:var(--text2); white-space:nowrap; vertical-align:middle; line-height:1.2; }
+.dv-table td.dv-room-cell span { color:var(--text3); font-size:9px; }
+.dv-slot { height:20px; border-radius:3px; position:relative; overflow:hidden; }
+.dv-slot.empty { background:transparent; }
+.dv-slot.booked { cursor:pointer; display:flex; align-items:center; gap:4px; padding:0 5px; overflow:hidden; }
+.dv-slot.booked:hover { filter:brightness(1.15); }
+.dv-slot-label { font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff; font-family:var(--sans); font-weight:600; flex-shrink:0; min-width:0; }
+.dv-slot-sub { font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:rgba(255,255,255,0.65); font-family:var(--mono); flex:1; min-width:0; }
+.dv-stat-row { display:flex; gap:16px; font-size:11px; color:var(--text2); }
+.dv-stat-row strong { color:var(--text); }
+
+/* Room expand row */
+.room-expand-tr td { padding:0; border-bottom:1px solid var(--border); }
+.room-expand-inner { padding:10px 14px 14px; background:var(--surface2); }
+.room-expand-inner .data-table { font-size:10px; }
+.room-expand-inner .data-table th { font-size:9px; padding:5px 7px; }
+.room-expand-inner .data-table td { padding:4px 7px; }
+.room-row-clickable { cursor:pointer; }
+.room-row-clickable td:first-child::before { content:'▶ '; font-size:8px; color:var(--text3); transition:transform 0.15s; display:inline-block; }
+.room-row-clickable.expanded td:first-child::before { content:'▼ '; color:var(--accent); }
+
+/* Snapshot banner */
+.snapshot-banner { background: rgba(79,142,247,0.07); border: 1px solid rgba(79,142,247,0.2); border-radius: 6px; padding: 9px 13px; font-size: 11px; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+
+/* Empty — removed: unused, was bleeding padding into .dv-slot.empty */
+
+/* Chart containers */
+.chart-svg-wrap { width: 100%; overflow: visible; }
+
+/* Offline HTML export modal */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  z-index: 500; display: flex; align-items: center; justify-content: center;
+}
+.modal-backdrop.hidden { display: none; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 24px 26px; width: 340px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.modal-title { font-family: var(--sans); font-weight: 700; font-size: 14px; color: var(--text); }
+.modal-sub { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.5; }
+.modal-options { display: flex; flex-direction: column; gap: 8px; }
+.modal-option {
+  display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px;
+  border: 1px solid var(--border2); border-radius: 6px; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.modal-option:hover { border-color: var(--accent); background: rgba(79,142,247,0.05); }
+.modal-option input[type=radio] { accent-color: var(--accent); margin-top: 2px; flex-shrink: 0; }
+.modal-option-label { font-size: 12px; color: var(--text); font-family: var(--sans); font-weight: 600; }
+.modal-option-desc { font-size: 10px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.modal-actions .btn { width: auto; padding: 7px 16px; }
+</style>
+</head>
+<body>
+<div class="tooltip" id="tooltip"></div>
+
+<!-- Offline HTML export modal -->
+<div class="modal-backdrop hidden" id="offline-modal">
+  <div class="modal">
+    <div>
+      <div class="modal-title">Export Offline HTML</div>
+      <div class="modal-sub">Generates a fully self-contained HTML file that works without uploading any data.</div>
+    </div>
+    <div class="modal-options">
+      <label class="modal-option">
+        <input type="radio" name="offline-scope" value="all" checked>
+        <div>
+          <div class="modal-option-label">All loaded datasets</div>
+          <div class="modal-option-desc">Embeds every dataset currently in the session — useful for a full historical archive.</div>
+        </div>
+      </label>
+      <label class="modal-option">
+        <input type="radio" name="offline-scope" value="filtered">
+        <div>
+          <div class="modal-option-label">Filtered date range only</div>
+          <div class="modal-option-desc">Only embeds bookings within the currently selected date range.</div>
+        </div>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('offline-modal').classList.add('hidden')">Cancel</button>
+      <button class="btn" onclick="doExportOfflineHTML()">Generate</button>
+    </div>
+  </div>
+</div>
+
+<div class="header">
+  <div>
+    <div class="header-logo">Studio<span>Pulse</span></div>
+    <div class="header-sub">Berklee Room Analytics</div>
+  </div>
+  <div class="badge" id="data-badge">No data loaded</div>
+  <div class="header-right">
+    <span class="hdr-count" id="booking-count"></span>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">Dark</button>
+    <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="exportSnapshot()">⬇ Export Snapshot</button>
+    <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="openOfflineModal()">⬇ Offline HTML</button>
+    <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="pushToGitHub()" id="push-btn">⬆ Push to GitHub</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">Data Source</div>
+      <div class="upload-zone" id="upload-zone"
+           onclick="document.getElementById('csv-file').click()"
+           ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+        <div class="uz-icon">📂</div>
+        <div class="uz-text">Upload Schedule CSV</div>
+        <div class="uz-hint">drag & drop or click</div>
+      </div>
+      <input type="file" id="csv-file" accept=".csv" onchange="handleCSVUpload(event)">
+      <button class="btn secondary" style="margin-top:0;" onclick="document.getElementById('snap-file').click()">📸 Load Snapshot</button>
+      <input type="file" id="snap-file" accept=".json" onchange="handleSnapshotLoad(event)">
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Date Range</div>
+      <div class="date-range">
+        <input type="date" id="f-start" onchange="applyFilters()">
+        <input type="date" id="f-end" onchange="applyFilters()">
+      </div>
+      <select id="f-semester" onchange="applySemesterPreset()">
+        <option value="">— Select Period —</option>
+      </select>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Building</div>
+      <div class="filter-group" id="f-buildings"></div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Room Type</div>
+      <div class="filter-group" id="f-room-types"></div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Status</div>
+      <div class="filter-group" id="f-statuses"></div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Event Type</div>
+      <input type="text" id="evt-search" placeholder="Filter types…" oninput="filterEvtList()" style="margin-bottom:6px;font-size:11px;padding:5px 8px;">
+      <div class="filter-group" id="f-event-types"></div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Capabilities</div>
+      <div class="filter-group">
+        <div class="filter-row"><input type="checkbox" id="cap-live" onchange="applyFilters()"><label for="cap-live">Live Room</label></div>
+        <div class="filter-row"><input type="checkbox" id="cap-iso" onchange="applyFilters()"><label for="cap-iso">Iso Booth</label></div>
+        <div class="filter-row"><input type="checkbox" id="cap-drums" onchange="applyFilters()"><label for="cap-drums">Drums</label></div>
+        <div class="filter-row"><input type="checkbox" id="cap-drums-stu" onchange="applyFilters()"><label for="cap-drums-stu">Student Drums</label></div>
+        <div class="filter-row"><input type="checkbox" id="cap-surround" onchange="applyFilters()"><label for="cap-surround">Surround (5.1+)</label></div>
+        <div class="filter-row"><input type="checkbox" id="cap-atmos" onchange="applyFilters()"><label for="cap-atmos">Dolby Atmos</label></div>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <button class="btn secondary" onclick="clearFilters()">Clear All Filters</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div id="no-data" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;color:var(--text3);">
+      <div style="font-size:36px;">🎛</div>
+      <div style="font-family:var(--sans);font-size:15px;font-weight:700;color:var(--text2);">No data loaded</div>
+      <div style="font-size:12px;text-align:center;max-width:280px;line-height:1.6;">Upload an AAOF schedule export CSV using the sidebar, or load a previously exported snapshot.</div>
+    </div>
+    <div id="data-view" style="display:none;flex-direction:column;gap:16px;">
+    <div class="tabs">
+      <div class="tab active" data-tab="overview">Overview</div>
+      <div class="tab" data-tab="heatmaps">Heatmaps</div>
+      <div class="tab" data-tab="rooms">Rooms</div>
+      <div class="tab" data-tab="trends">Trends</div>
+      <div class="tab" data-tab="dayview">Day View</div>
+      <div class="tab" data-tab="history">History</div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="tab-panel active" id="tab-overview">
+      <div class="stat-grid" id="stat-grid"></div>
+      <div class="two-col">
+        <div class="card">
+          <div class="section-hdr"><div><div class="section-title">Top Rooms by Bookings</div><div class="section-sub">Filtered period</div></div></div>
+          <div class="bar-chart" id="chart-top-rooms"></div>
+        </div>
+        <div class="card">
+          <div class="section-hdr"><div><div class="section-title">Bookings by Event Type</div><div class="section-sub">Top 10</div></div></div>
+          <div class="bar-chart" id="chart-event-types"></div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="section-hdr"><div><div class="section-title">Bookings by Building</div></div></div>
+          <div class="bar-chart" id="chart-buildings"></div>
+        </div>
+        <div class="card">
+          <div class="section-hdr"><div><div class="section-title">Bookings by Status</div></div></div>
+          <div class="bar-chart" id="chart-statuses"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HEATMAPS -->
+    <div class="tab-panel" id="tab-heatmaps">
+      <div class="card">
+        <div class="section-hdr">
+          <div><div class="section-title">Hourly Demand Heatmap</div><div class="section-sub">Day of week × hour of booking day (9am start). Times are EST/EDT.</div></div>
+          <select class="inline" id="hm1-metric" onchange="renderHM1()">
+            <option value="count">Booking count</option>
+            <option value="hours">Total hours</option>
+          </select>
+        </div>
+        <div class="heatmap-wrap" id="hm1"></div>
+        <div class="hm-legend" id="hm1-legend"></div>
+      </div>
+      <div class="card">
+        <div class="section-hdr">
+          <div><div class="section-title">Room × Week of Semester</div><div class="section-sub">Week 1 = week of semester start date.</div></div>
+          <select class="inline" id="hm2-metric" onchange="renderHM2()">
+            <option value="hours">Hours booked</option>
+            <option value="count">Booking count</option>
+            <option value="util">Utilization %</option>
+          </select>
+        </div>
+        <div class="week-hm-wrap" id="hm2"></div>
+        <div class="hm-legend" id="hm2-legend"></div>
+      </div>
+      <div class="card">
+        <div class="section-hdr"><div><div class="section-title">After-Midnight Demand</div><div class="section-sub">12am–6am bookings by building × day of week.</div></div></div>
+        <div class="heatmap-wrap" id="hm3"></div>
+      </div>
+    </div>
+
+    <!-- ROOMS -->
+    <div class="tab-panel" id="tab-rooms">
+      <div class="card">
+        <div class="section-hdr">
+          <div><div class="section-title">Room Utilization</div><div class="section-sub">Hours booked vs. available (21h/day: 9am–6am) in filtered range.</div></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="text" id="rooms-search" placeholder="Search rooms…" oninput="renderRooms()" style="width:140px;margin:0;font-size:11px;padding:5px 8px;">
+            <select class="inline" id="rooms-sort" onchange="renderRooms()">
+              <option value="util-desc">Util ↓</option>
+              <option value="util-asc">Util ↑</option>
+              <option value="bookings-desc">Bookings ↓</option>
+              <option value="alpha">Name A–Z</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr>
+              <th onclick="roomSortCol('name')">Room <span class="sort-ind" data-col="name"></span></th>
+              <th onclick="roomSortCol('building')">Bldg <span class="sort-ind" data-col="building"></span></th>
+              <th onclick="roomSortCol('type')">Type <span class="sort-ind" data-col="type"></span></th>
+              <th onclick="roomSortCol('monitoring')">Monitoring <span class="sort-ind" data-col="monitoring"></span></th>
+              <th onclick="roomSortCol('bookings')">Bookings <span class="sort-ind" data-col="bookings"></span></th>
+              <th onclick="roomSortCol('hours')">Hours <span class="sort-ind" data-col="hours"></span></th>
+              <th onclick="roomSortCol('util')">Utilization <span class="sort-ind" data-col="util"></span></th>
+              <th>Caps</th>
+            </tr></thead>
+            <tbody id="rooms-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRENDS -->
+    <div class="tab-panel" id="tab-trends">
+      <div class="card">
+        <div class="section-hdr"><div><div class="section-title">Weekly Booking Volume</div></div></div>
+        <div id="chart-weekly" style="height:160px;"></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="section-hdr"><div><div class="section-title">Weekly Hours by Room Type</div></div></div>
+          <div id="chart-type-trend" style="height:150px;"></div>
+        </div>
+        <div class="card">
+          <div class="section-hdr"><div><div class="section-title">Top Event Types by Week</div></div></div>
+          <div id="chart-evt-trend" style="height:150px;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-hdr"><div><div class="section-title">Booking Day Activity</div><div class="section-sub">Bookings starting each hour of the booking day (9am=start, loops to 6am).</div></div></div>
+        <div id="chart-daily-dist" style="height:130px;"></div>
+      </div>
+    </div>
+
+
+    <!-- DAY VIEW -->
+    <div class="tab-panel" id="tab-dayview">
+      <div class="card">
+        <div class="section-hdr">
+          <div>
+            <div class="section-title">Day View</div>
+            <div class="section-sub">All rooms · booking day 9am–6am next day</div>
+          </div>
+          <div class="dv-nav">
+            <button onclick="dvStep(-1)">◀</button>
+            <span class="dv-date-lbl" id="dv-date-lbl">—</span>
+            <button onclick="dvStep(1)">▶</button>
+            <input type="date" class="dv-date-input" id="dv-date-input" onchange="dvSetDate(this.value)">
+          </div>
+        </div>
+        <div class="dv-stat-row" id="dv-stats"></div>
+        <div class="dv-wrap" id="dv-wrap"></div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="tab-panel" id="tab-history">
+      <div class="card">
+        <div class="section-hdr"><div><div class="section-title">Loaded Datasets</div><div class="section-sub">Load additional semesters to enable comparisons.</div></div></div>
+        <div id="history-datasets"></div>
+        <button class="btn secondary" style="width:auto;margin-top:12px;font-size:11px;" onclick="document.getElementById('snap-file').click()">+ Load Snapshot / CSV</button>
+      </div>
+      <div class="card" id="compare-card" style="display:none;">
+        <div class="section-hdr"><div><div class="section-title">Semester Comparison</div></div></div>
+        <div id="compare-content"></div>
+      </div>
+    </div>
+    </div><!-- /data-view -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// =====================================================================
+// DATA
+// =====================================================================
+const _HTML_BEFORE = "<!DOCTYPE html>\n<html lang=\"en\" data-theme=\"light\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>StudioPulse \u2014 Berklee<\/title>\n<style>\n@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Syne:wght@400;600;700;800&display=swap');\n\n:root {\n  --bg: #0d0f14;\n  --surface: #13161d;\n  --surface2: #1a1e28;\n  --border: #252a38;\n  --border2: #2e3448;\n  --accent: #4f8ef7;\n  --accent2: #7b5ea7;\n  --accent3: #e05c5c;\n  --accent4: #4abf8a;\n  --text: #e8ecf4;\n  --text2: #8892aa;\n  --text3: #525c72;\n  --mono: 'IBM Plex Mono', monospace;\n  --sans: 'Syne', sans-serif;\n}\n* { box-sizing: border-box; margin: 0; padding: 0; }\nbody { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; min-height: 100vh; overflow-x: hidden; }\n\n.header { padding: 14px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; background: var(--surface); position: sticky; top: 0; z-index: 100; }\n.header-logo { font-family: var(--sans); font-weight: 800; font-size: 17px; letter-spacing: -0.5px; color: var(--text); }\n.header-logo span { color: var(--accent); }\n.header-sub { font-size: 10px; color: var(--text3); letter-spacing: 0.5px; font-family: var(--sans); font-weight: 600; text-transform: uppercase; }\n.badge { background: var(--surface2); border: 1px solid var(--border2); border-radius: 4px; padding: 3px 9px; font-size: 10px; color: var(--text2); }\n.badge.active { border-color: var(--accent); color: var(--accent); }\n.header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }\n.hdr-count { font-size: 11px; color: var(--text3); }\n\n.app { display: flex; height: calc(100vh - 52px); }\n\n/* Sidebar */\n.sidebar { width: 240px; min-width: 240px; background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }\n.sb-section { padding: 12px 14px; border-bottom: 1px solid var(--border); }\n.sb-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 9px; font-family: var(--sans); font-weight: 600; }\n.filter-group { display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow-y: auto; }\n.filter-row { display: flex; align-items: center; gap: 7px; padding: 4px 6px; border-radius: 4px; cursor: pointer; transition: background 0.1s; }\n.filter-row:hover { background: var(--surface2); }\n.filter-row input[type=checkbox] { accent-color: var(--accent); width: 12px; height: 12px; cursor: pointer; flex-shrink: 0; }\n.filter-row label { cursor: pointer; color: var(--text2); font-size: 11px; flex: 1; }\n.filter-count { font-size: 10px; color: var(--text3); }\nselect, input[type=date] { width: 100%; background: var(--surface2); border: 1px solid var(--border2); color: var(--text); font-family: var(--mono); font-size: 11px; padding: 6px 8px; border-radius: 4px; outline: none; margin-bottom: 5px; }\nselect { appearance: none; -webkit-appearance: none; }\nselect:focus, input:focus { border-color: var(--accent); }\n.date-range { display: flex; flex-direction: column; gap: 4px; }\n.date-range input { margin-bottom: 0; }\n.btn { background: var(--accent); color: #fff; border: none; padding: 7px 12px; border-radius: 4px; font-family: var(--mono); font-size: 11px; cursor: pointer; width: 100%; transition: opacity 0.15s; font-weight: 500; }\n.btn:hover { opacity: 0.85; }\n.btn.secondary { background: var(--surface2); border: 1px solid var(--border2); color: var(--text2); }\n.btn.secondary:hover { border-color: var(--accent); color: var(--accent); }\n.upload-zone { border: 1.5px dashed var(--border2); border-radius: 6px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.15s; margin-bottom: 7px; }\n.upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(79,142,247,0.05); }\n.upload-zone .uz-icon { font-size: 18px; }\n.upload-zone .uz-text { font-size: 11px; color: var(--text2); margin-top: 4px; }\n.upload-zone .uz-hint { font-size: 10px; color: var(--text3); margin-top: 3px; }\ninput[type=file] { display: none; }\n\n/* Main */\n.main { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }\n\n/* Tabs */\n.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }\n.tab { padding: 8px 14px; font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; letter-spacing: 0.2px; }\n.tab:hover { color: var(--text2); }\n.tab.active { color: var(--accent); border-bottom-color: var(--accent); }\n.tab-panel { display: none; flex-direction: column; gap: 16px; }\n.tab-panel.active { display: flex; }\n\n/* Cards & stats */\n.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }\n.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 12px 14px; }\n.stat-card .accent-bar { height: 3px; border-radius: 2px; margin-bottom: 10px; }\n.stat-card .val { font-family: var(--sans); font-size: 24px; font-weight: 700; line-height: 1; }\n.stat-card .lbl { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 3px; font-family: var(--sans); }\n.stat-card .sub { font-size: 10px; color: var(--text2); margin-top: 4px; }\n.card { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 16px 18px; }\n.section-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; gap: 8px; }\n.section-title { font-family: var(--sans); font-size: 12px; font-weight: 700; color: var(--text); }\n.section-sub { font-size: 10px; color: var(--text3); margin-top: 2px; }\n.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }\n@media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } }\n\n/* Bar chart */\n.bar-chart { display: flex; flex-direction: column; gap: 5px; }\n.bar-row { display: flex; align-items: center; gap: 7px; }\n.bar-label { width: 110px; font-size: 10px; color: var(--text2); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.bar-track { flex: 1; height: 16px; background: var(--surface2); border-radius: 3px; overflow: hidden; }\n.bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }\n.bar-val { width: 42px; font-size: 10px; color: var(--text2); }\n\n/* Heatmap */\n.heatmap-wrap, .week-hm-wrap { overflow-x: auto; }\n.heatmap-table { border-collapse: collapse; }\n.heatmap-table th { color: var(--text3); font-weight: 600; padding: 0 2px 5px; font-family: var(--sans); font-size: 9px; letter-spacing: 0.4px; }\n.hm-cell { width: 26px; height: 20px; border-radius: 3px; cursor: default; transition: transform 0.1s; display: block; }\n.hm-cell:hover { transform: scale(1.25); }\n.hm-row-label { text-align: right; padding-right: 7px; color: var(--text3); font-size: 10px; white-space: nowrap; width: 36px; }\n.week-hm-table { border-collapse: collapse; }\n.week-hm-table th { font-size: 9px; color: var(--text3); padding: 0 2px 5px; font-family: var(--sans); font-weight: 600; }\n.week-hm-cell { width: 28px; height: 22px; border-radius: 3px; cursor: default; transition: transform 0.1s; display: block; }\n.week-hm-cell:hover { transform: scale(1.2); }\n.week-hm-room-label { text-align: right; padding-right: 7px; font-size: 10px; color: var(--text2); white-space: nowrap; }\n.hm-legend { display: flex; align-items: center; gap: 3px; margin-top: 8px; font-size: 10px; color: var(--text3); }\n.hm-legend-swatch { width: 14px; height: 9px; border-radius: 2px; }\nselect.inline { width: auto; margin: 0; font-size: 10px; padding: 4px 7px; }\n\n/* Tooltip */\n.tooltip { position: fixed; background: var(--surface2); border: 1px solid var(--border2); border-radius: 5px; padding: 7px 10px; font-size: 10px; color: var(--text); pointer-events: none; z-index: 9999; display: none; line-height: 1.7; max-width: 180px; }\n.tooltip.show { display: block; }\n\n/* Table */\n.data-table { width: 100%; border-collapse: collapse; font-size: 11px; }\n.data-table th { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--border); color: var(--text3); font-family: var(--sans); font-weight: 600; font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase; cursor: pointer; white-space: nowrap; }\n.data-table th:hover { color: var(--text2); }\n.data-table td { padding: 6px 9px; border-bottom: 1px solid var(--border); color: var(--text2); }\n.data-table tr:last-child td { border-bottom: none; }\n.data-table tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }\n.pill { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 9px; border: 1px solid; }\n.util-meter { display: flex; align-items: center; gap: 5px; }\n.util-bar { flex: 1; height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; min-width: 40px; }\n.util-fill { height: 100%; border-radius: 3px; }\n\n/* Scrollbar */\n::-webkit-scrollbar { width: 5px; height: 5px; }\n::-webkit-scrollbar-track { background: transparent; }\n::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }\n\n/* Sort indicator */\n.sort-ind::after { content: ''; }\nth.sort-asc .sort-ind::after { content: ' \u2191'; color: var(--accent); }\nth.sort-desc .sort-ind::after { content: ' \u2193'; color: var(--accent); }\n\n/* Solo button */\n.solo-btn {\n  font-size: 9px; color: var(--text3); cursor: pointer; padding: 1px 4px;\n  border: 1px solid var(--border2); border-radius: 3px; flex-shrink: 0;\n  display: none; line-height: 1.4; font-family: var(--sans); font-weight: 600; letter-spacing: 0.3px;\n}\n.filter-row:hover .solo-btn { display: inline; }\n.solo-btn:hover { color: var(--accent); border-color: var(--accent); }\n\n/* Merge notice */\n#merge-notice { transition: opacity 1s ease; }\n\n/* Day View */\n.dv-nav { display:flex; align-items:center; gap:10px; }\n.dv-nav button { background:var(--surface2); border:1px solid var(--border2); color:var(--text2); font-family:var(--mono); font-size:12px; padding:5px 10px; border-radius:4px; cursor:pointer; }\n.dv-nav button:hover { border-color:var(--accent); color:var(--accent); }\n.dv-date-lbl { font-family:var(--sans); font-size:13px; font-weight:700; color:var(--text); min-width:160px; text-align:center; }\n.dv-date-input { background:var(--surface2); border:1px solid var(--border2); color:var(--text); font-family:var(--mono); font-size:11px; padding:4px 7px; border-radius:4px; outline:none; width:auto; margin:0; }\n.dv-date-input:focus { border-color:var(--accent); }\n.dv-no-data { color:var(--text3); font-size:12px; padding:24px 0; text-align:center; }\n.dv-wrap { overflow-x:auto; margin-top:4px; }\n.dv-table { border-collapse:collapse; min-width:100%; table-layout:fixed; }\n.dv-table th { font-family:var(--sans); font-size:9px; font-weight:600; color:var(--text3); padding:3px 3px 4px; border-bottom:1px solid var(--border); text-align:center; white-space:nowrap; letter-spacing:0.3px; }\n.dv-table th.dv-room-th { text-align:left; padding-left:8px; width:120px; min-width:120px; }\n.dv-table th.dv-now { color:var(--accent); border-bottom-color:var(--accent); }\n.dv-table td { padding:1px 1px; vertical-align:top; border-bottom:1px solid var(--border); }\n.dv-table td.dv-room-cell { padding:0 8px; font-size:10px; color:var(--text2); white-space:nowrap; vertical-align:middle; height:24px; line-height:1.3; }\n.dv-table td.dv-room-cell span { color:var(--text3); font-size:9px; }\n.dv-slot { height:22px; border-radius:3px; position:relative; overflow:hidden; }\n.dv-slot.empty { background:transparent; }\n.dv-slot.booked { cursor:pointer; display:flex; align-items:center; gap:4px; padding:0 5px; overflow:hidden; }\n.dv-slot.booked:hover { filter:brightness(1.15); }\n.dv-slot-label { font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff; font-family:var(--sans); font-weight:600; flex-shrink:0; min-width:0; }\n.dv-slot-sub { font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:rgba(255,255,255,0.65); font-family:var(--mono); flex:1; min-width:0; }\n.dv-stat-row { display:flex; gap:16px; font-size:11px; color:var(--text2); }\n.dv-stat-row strong { color:var(--text); }\n\n/* Room expand row */\n.room-expand-tr td { padding:0; border-bottom:1px solid var(--border); }\n.room-expand-inner { padding:10px 14px 14px; background:var(--surface2); }\n.room-expand-inner .data-table { font-size:10px; }\n.room-expand-inner .data-table th { font-size:9px; padding:5px 7px; }\n.room-expand-inner .data-table td { padding:4px 7px; }\n.room-row-clickable { cursor:pointer; }\n.room-row-clickable td:first-child::before { content:'\u25b6 '; font-size:8px; color:var(--text3); transition:transform 0.15s; display:inline-block; }\n.room-row-clickable.expanded td:first-child::before { content:'\u25bc '; color:var(--accent); }\n\n/* Snapshot banner */\n.snapshot-banner { background: rgba(79,142,247,0.07); border: 1px solid rgba(79,142,247,0.2); border-radius: 6px; padding: 9px 13px; font-size: 11px; color: var(--accent); display: flex; align-items: center; gap: 8px; }\n\n/* Empty — removed: unused, was bleeding padding into .dv-slot.empty */\n\n/* Chart containers */\n.chart-svg-wrap { width: 100%; overflow: visible; }\n\n/* Offline HTML export modal */\n.modal-backdrop {\n  position: fixed; inset: 0; background: rgba(0,0,0,0.55);\n  z-index: 500; display: flex; align-items: center; justify-content: center;\n}\n.modal-backdrop.hidden { display: none; }\n.modal {\n  background: var(--surface); border: 1px solid var(--border2);\n  border-radius: 10px; padding: 24px 26px; width: 340px;\n  display: flex; flex-direction: column; gap: 14px;\n}\n.modal-title { font-family: var(--sans); font-weight: 700; font-size: 14px; color: var(--text); }\n.modal-sub { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.5; }\n.modal-options { display: flex; flex-direction: column; gap: 8px; }\n.modal-option {\n  display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px;\n  border: 1px solid var(--border2); border-radius: 6px; cursor: pointer;\n  transition: border-color 0.15s, background 0.15s;\n}\n.modal-option:hover { border-color: var(--accent); background: rgba(79,142,247,0.05); }\n.modal-option input[type=radio] { accent-color: var(--accent); margin-top: 2px; flex-shrink: 0; }\n.modal-option-label { font-size: 12px; color: var(--text); font-family: var(--sans); font-weight: 600; }\n.modal-option-desc { font-size: 10px; color: var(--text3); margin-top: 2px; line-height: 1.4; }\n.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }\n.modal-actions .btn { width: auto; padding: 7px 16px; }\n<\/style>\n<\/head>\n<body>\n<div class=\"tooltip\" id=\"tooltip\"><\/div>\n\n<!-- Offline HTML export modal -->\n<div class=\"modal-backdrop hidden\" id=\"offline-modal\">\n  <div class=\"modal\">\n    <div>\n      <div class=\"modal-title\">Export Offline HTML<\/div>\n      <div class=\"modal-sub\">Generates a fully self-contained HTML file that works without uploading any data.<\/div>\n    <\/div>\n    <div class=\"modal-options\">\n      <label class=\"modal-option\">\n        <input type=\"radio\" name=\"offline-scope\" value=\"all\" checked>\n        <div>\n          <div class=\"modal-option-label\">All loaded datasets<\/div>\n          <div class=\"modal-option-desc\">Embeds every dataset currently in the session \u2014 useful for a full historical archive.<\/div>\n        <\/div>\n      <\/label>\n      <label class=\"modal-option\">\n        <input type=\"radio\" name=\"offline-scope\" value=\"filtered\">\n        <div>\n          <div class=\"modal-option-label\">Filtered date range only<\/div>\n          <div class=\"modal-option-desc\">Only embeds bookings within the currently selected date range.<\/div>\n        <\/div>\n      <\/label>\n    <\/div>\n    <div class=\"modal-actions\">\n      <button class=\"btn secondary\" onclick=\"document.getElementById('offline-modal').classList.add('hidden')\">Cancel<\/button>\n      <button class=\"btn\" onclick=\"doExportOfflineHTML()\">Generate<\/button>\n    <\/div>\n  <\/div>\n<\/div>\n\n<div class=\"header\">\n  <div>\n    <div class=\"header-logo\">Studio<span>Pulse<\/span><\/div>\n    <div class=\"header-sub\">Berklee Room Analytics<\/div>\n  <\/div>\n  <div class=\"badge\" id=\"data-badge\">No data loaded<\/div>\n  <div class=\"header-right\">\n    <span class=\"hdr-count\" id=\"booking-count\"><\/span>\n    <button class=\"btn secondary\" style=\"width:auto;padding:5px 10px;\" onclick=\"exportSnapshot()\">\u2b07 Export Snapshot<\/button>\n    <button class=\"btn secondary\" style=\"width:auto;padding:5px 10px;\" onclick=\"openOfflineModal()\">\u2b07 Offline HTML<\/button>\n  <\/div>\n<\/div>\n\n<div class=\"app\">\n  <div class=\"sidebar\">\n    <div class=\"sb-section\">\n      <div class=\"sb-label\">Data Source<\/div>\n      <div class=\"upload-zone\" id=\"upload-zone\"\n           onclick=\"document.getElementById('csv-file').click()\"\n           ondrop=\"handleDrop(event)\" ondragover=\"handleDragOver(event)\" ondragleave=\"handleDragLeave(event)\">\n        <div class=\"uz-icon\">\ud83d\udcc2<\/div>\n        <div class=\"uz-text\">Upload Schedule CSV<\/div>\n        <div class=\"uz-hint\">drag & drop or click<\/div>\n      <\/div>\n      <input type=\"file\" id=\"csv-file\" accept=\".csv\" onchange=\"handleCSVUpload(event)\">\n      <button class=\"btn secondary\" style=\"margin-top:0;\" onclick=\"document.getElementById('snap-file').click()\">\ud83d\udcf8 Load Snapshot<\/button>\n      <input type=\"file\" id=\"snap-file\" accept=\".json\" onchange=\"handleSnapshotLoad(event)\">\n    <\/div>\n\n    <div class=\"sb-section\">\n      <div class=\"sb-label\">Date Range<\/div>\n      <div class=\"date-range\">\n        <input type=\"date\" id=\"f-start\" onchange=\"applyFilters()\">\n        <input type=\"date\" id=\"f-end\" onchange=\"applyFilters()\">\n      <\/div>\n      <select id=\"f-semester\" onchange=\"applySemesterPreset()\">\n        <option value=\"\">\u2014 Select Period \u2014<\/option>\n      <\/select>\n    <\/div>\n\n    <div class=\"sb-section\">\n      <div class=\"sb-label\">Building<\/div>\n      <div class=\"filter-group\" id=\"f-buildings\"><\/div>\n    <\/div>\n\n    <div class=\"sb-section\">\n      <div class=\"sb-label\">Room Type<\/div>\n      <div class=\"filter-group\" id=\"f-room-types\"><\/div>\n    <\/div>\n\n    <div class=\"sb-section\">\n      <div class=\"sb-label\">Status<\/div>\n      <div class=\"filter-group\" id=\"f-statuses\"><\/div>\n    <\/div>\n\n    <div class=\"sb-section\">\n      <div class=\"sb-label\">Event Type<\/div>\n      <input type=\"text\" id=\"evt-search\" placeholder=\"Filter types\u2026\" oninput=\"filterEvtList()\" style=\"margin-bottom:6px;font-size:11px;padding:5px 8px;\">\n      <div class=\"filter-group\" id=\"f-event-types\"><\/div>\n    <\/div>\n\n    <div class=\"sb-section\">\n      <div class=\"sb-label\">Capabilities<\/div>\n      <div class=\"filter-group\">\n        <div class=\"filter-row\"><input type=\"checkbox\" id=\"cap-live\" onchange=\"applyFilters()\"><label for=\"cap-live\">Live Room<\/label><\/div>\n        <div class=\"filter-row\"><input type=\"checkbox\" id=\"cap-iso\" onchange=\"applyFilters()\"><label for=\"cap-iso\">Iso Booth<\/label><\/div>\n        <div class=\"filter-row\"><input type=\"checkbox\" id=\"cap-drums\" onchange=\"applyFilters()\"><label for=\"cap-drums\">Drums<\/label><\/div>\n        <div class=\"filter-row\"><input type=\"checkbox\" id=\"cap-drums-stu\" onchange=\"applyFilters()\"><label for=\"cap-drums-stu\">Student Drums<\/label><\/div>\n        <div class=\"filter-row\"><input type=\"checkbox\" id=\"cap-surround\" onchange=\"applyFilters()\"><label for=\"cap-surround\">Surround (5.1+)<\/label><\/div>\n        <div class=\"filter-row\"><input type=\"checkbox\" id=\"cap-atmos\" onchange=\"applyFilters()\"><label for=\"cap-atmos\">Dolby Atmos<\/label><\/div>\n      <\/div>\n    <\/div>\n\n    <div class=\"sb-section\">\n      <button class=\"btn secondary\" onclick=\"clearFilters()\">Clear All Filters<\/button>\n    <\/div>\n  <\/div>\n\n  <div class=\"main\">\n    <div id=\"no-data\" style=\"display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;color:var(--text3);\">\n      <div style=\"font-size:36px;\">\ud83c\udf9b<\/div>\n      <div style=\"font-family:var(--sans);font-size:15px;font-weight:700;color:var(--text2);\">No data loaded<\/div>\n      <div style=\"font-size:12px;text-align:center;max-width:280px;line-height:1.6;\">Upload an AAOF schedule export CSV using the sidebar, or load a previously exported snapshot.<\/div>\n    <\/div>\n    <div id=\"data-view\" style=\"display:none;flex-direction:column;gap:16px;\">\n    <div class=\"tabs\">\n      <div class=\"tab active\" data-tab=\"overview\">Overview<\/div>\n      <div class=\"tab\" data-tab=\"heatmaps\">Heatmaps<\/div>\n      <div class=\"tab\" data-tab=\"rooms\">Rooms<\/div>\n      <div class=\"tab\" data-tab=\"trends\">Trends<\/div>\n      <div class=\"tab\" data-tab=\"dayview\">Day View<\/div>\n      <div class=\"tab\" data-tab=\"history\">History<\/div>\n    <\/div>\n\n    <!-- OVERVIEW -->\n    <div class=\"tab-panel active\" id=\"tab-overview\">\n      <div class=\"stat-grid\" id=\"stat-grid\"><\/div>\n      <div class=\"two-col\">\n        <div class=\"card\">\n          <div class=\"section-hdr\"><div><div class=\"section-title\">Top Rooms by Bookings<\/div><div class=\"section-sub\">Filtered period<\/div><\/div><\/div>\n          <div class=\"bar-chart\" id=\"chart-top-rooms\"><\/div>\n        <\/div>\n        <div class=\"card\">\n          <div class=\"section-hdr\"><div><div class=\"section-title\">Bookings by Event Type<\/div><div class=\"section-sub\">Top 10<\/div><\/div><\/div>\n          <div class=\"bar-chart\" id=\"chart-event-types\"><\/div>\n        <\/div>\n      <\/div>\n      <div class=\"two-col\">\n        <div class=\"card\">\n          <div class=\"section-hdr\"><div><div class=\"section-title\">Bookings by Building<\/div><\/div><\/div>\n          <div class=\"bar-chart\" id=\"chart-buildings\"><\/div>\n        <\/div>\n        <div class=\"card\">\n          <div class=\"section-hdr\"><div><div class=\"section-title\">Bookings by Status<\/div><\/div><\/div>\n          <div class=\"bar-chart\" id=\"chart-statuses\"><\/div>\n        <\/div>\n      <\/div>\n    <\/div>\n\n    <!-- HEATMAPS -->\n    <div class=\"tab-panel\" id=\"tab-heatmaps\">\n      <div class=\"card\">\n        <div class=\"section-hdr\">\n          <div><div class=\"section-title\">Hourly Demand Heatmap<\/div><div class=\"section-sub\">Day of week \u00d7 hour of booking day (9am start). Times are EST/EDT.<\/div><\/div>\n          <select class=\"inline\" id=\"hm1-metric\" onchange=\"renderHM1()\">\n            <option value=\"count\">Booking count<\/option>\n            <option value=\"hours\">Total hours<\/option>\n          <\/select>\n        <\/div>\n        <div class=\"heatmap-wrap\" id=\"hm1\"><\/div>\n        <div class=\"hm-legend\" id=\"hm1-legend\"><\/div>\n      <\/div>\n      <div class=\"card\">\n        <div class=\"section-hdr\">\n          <div><div class=\"section-title\">Room \u00d7 Week of Semester<\/div><div class=\"section-sub\">Week 1 = week of semester start date.<\/div><\/div>\n          <select class=\"inline\" id=\"hm2-metric\" onchange=\"renderHM2()\">\n            <option value=\"hours\">Hours booked<\/option>\n            <option value=\"count\">Booking count<\/option>\n            <option value=\"util\">Utilization %<\/option>\n          <\/select>\n        <\/div>\n        <div class=\"week-hm-wrap\" id=\"hm2\"><\/div>\n        <div class=\"hm-legend\" id=\"hm2-legend\"><\/div>\n      <\/div>\n      <div class=\"card\">\n        <div class=\"section-hdr\"><div><div class=\"section-title\">After-Midnight Demand<\/div><div class=\"section-sub\">12am\u20136am bookings by building \u00d7 day of week.<\/div><\/div><\/div>\n        <div class=\"heatmap-wrap\" id=\"hm3\"><\/div>\n      <\/div>\n    <\/div>\n\n    <!-- ROOMS -->\n    <div class=\"tab-panel\" id=\"tab-rooms\">\n      <div class=\"card\">\n        <div class=\"section-hdr\">\n          <div><div class=\"section-title\">Room Utilization<\/div><div class=\"section-sub\">Hours booked vs. available (21h/day: 9am\u20136am) in filtered range.<\/div><\/div>\n          <div style=\"display:flex;gap:6px;align-items:center;\">\n            <input type=\"text\" id=\"rooms-search\" placeholder=\"Search rooms\u2026\" oninput=\"renderRooms()\" style=\"width:140px;margin:0;font-size:11px;padding:5px 8px;\">\n            <select class=\"inline\" id=\"rooms-sort\" onchange=\"renderRooms()\">\n              <option value=\"util-desc\">Util \u2193<\/option>\n              <option value=\"util-asc\">Util \u2191<\/option>\n              <option value=\"bookings-desc\">Bookings \u2193<\/option>\n              <option value=\"alpha\">Name A\u2013Z<\/option>\n            <\/select>\n          <\/div>\n        <\/div>\n        <div style=\"overflow-x:auto;\">\n          <table class=\"data-table\">\n            <thead><tr>\n              <th onclick=\"roomSortCol('name')\">Room <span class=\"sort-ind\" data-col=\"name\"><\/span><\/th>\n              <th onclick=\"roomSortCol('building')\">Bldg <span class=\"sort-ind\" data-col=\"building\"><\/span><\/th>\n              <th onclick=\"roomSortCol('type')\">Type <span class=\"sort-ind\" data-col=\"type\"><\/span><\/th>\n              <th onclick=\"roomSortCol('monitoring')\">Monitoring <span class=\"sort-ind\" data-col=\"monitoring\"><\/span><\/th>\n              <th onclick=\"roomSortCol('bookings')\">Bookings <span class=\"sort-ind\" data-col=\"bookings\"><\/span><\/th>\n              <th onclick=\"roomSortCol('hours')\">Hours <span class=\"sort-ind\" data-col=\"hours\"><\/span><\/th>\n              <th onclick=\"roomSortCol('util')\">Utilization <span class=\"sort-ind\" data-col=\"util\"><\/span><\/th>\n              <th>Caps<\/th>\n            <\/tr><\/thead>\n            <tbody id=\"rooms-tbody\"><\/tbody>\n          <\/table>\n        <\/div>\n      <\/div>\n    <\/div>\n\n    <!-- TRENDS -->\n    <div class=\"tab-panel\" id=\"tab-trends\">\n      <div class=\"card\">\n        <div class=\"section-hdr\"><div><div class=\"section-title\">Weekly Booking Volume<\/div><\/div><\/div>\n        <div id=\"chart-weekly\" style=\"height:160px;\"><\/div>\n      <\/div>\n      <div class=\"two-col\">\n        <div class=\"card\">\n          <div class=\"section-hdr\"><div><div class=\"section-title\">Weekly Hours by Room Type<\/div><\/div><\/div>\n          <div id=\"chart-type-trend\" style=\"height:150px;\"><\/div>\n        <\/div>\n        <div class=\"card\">\n          <div class=\"section-hdr\"><div><div class=\"section-title\">Top Event Types by Week<\/div><\/div><\/div>\n          <div id=\"chart-evt-trend\" style=\"height:150px;\"><\/div>\n        <\/div>\n      <\/div>\n      <div class=\"card\">\n        <div class=\"section-hdr\"><div><div class=\"section-title\">Booking Day Activity<\/div><div class=\"section-sub\">Bookings starting each hour of the booking day (9am=start, loops to 6am).<\/div><\/div><\/div>\n        <div id=\"chart-daily-dist\" style=\"height:130px;\"><\/div>\n      <\/div>\n    <\/div>\n\n\n    <!-- DAY VIEW -->\n    <div class=\"tab-panel\" id=\"tab-dayview\">\n      <div class=\"card\">\n        <div class=\"section-hdr\">\n          <div>\n            <div class=\"section-title\">Day View<\/div>\n            <div class=\"section-sub\">All rooms \u00b7 booking day 9am\u20136am next day<\/div>\n          <\/div>\n          <div class=\"dv-nav\">\n            <button onclick=\"dvStep(-1)\">\u25c0<\/button>\n            <span class=\"dv-date-lbl\" id=\"dv-date-lbl\">\u2014<\/span>\n            <button onclick=\"dvStep(1)\">\u25b6<\/button>\n            <input type=\"date\" class=\"dv-date-input\" id=\"dv-date-input\" onchange=\"dvSetDate(this.value)\">\n          <\/div>\n        <\/div>\n        <div class=\"dv-stat-row\" id=\"dv-stats\"><\/div>\n        <div class=\"dv-wrap\" id=\"dv-wrap\"><\/div>\n      <\/div>\n    <\/div>\n\n    <!-- HISTORY -->\n    <div class=\"tab-panel\" id=\"tab-history\">\n      <div class=\"card\">\n        <div class=\"section-hdr\"><div><div class=\"section-title\">Loaded Datasets<\/div><div class=\"section-sub\">Load additional semesters to enable comparisons.<\/div><\/div><\/div>\n        <div id=\"history-datasets\"><\/div>\n        <button class=\"btn secondary\" style=\"width:auto;margin-top:12px;font-size:11px;\" onclick=\"document.getElementById('snap-file').click()\">+ Load Snapshot / CSV<\/button>\n      <\/div>\n      <div class=\"card\" id=\"compare-card\" style=\"display:none;\">\n        <div class=\"section-hdr\"><div><div class=\"section-title\">Semester Comparison<\/div><\/div><\/div>\n        <div id=\"compare-content\"><\/div>\n      <\/div>\n    <\/div>\n    <\/div><!-- /data-view -->\n  <\/div><!-- /main -->\n<\/div><!-- /app -->\n\n<script>\n";
+const _HTML_AFTER = "\n// =====================================================================\n// ROOM LOOKUP\n// =====================================================================\nconst roomLookup = {};\nROOM_META.forEach(r => {\n  // key is like \"136-B01\", building is \"136\", room portion is \"B01\"\n  const dashIdx = r.key.indexOf('-');\n  const bld = r.key.slice(0, dashIdx);\n  const rm = r.key.slice(dashIdx + 1);\n  roomLookup[bld + '-' + rm] = r;\n});\n\n// =====================================================================\n// STATE\n// =====================================================================\nlet allBookings = [];\nlet filteredBookings = [];\nlet datasets = [];\nlet currentTab = 'overview';\nlet semesterMonday = null; // global for current primary dataset\n\n// =====================================================================\n// DST-AWARE DISPLAY NOTE\n// CSV times are already stored as local EST/EDT by WhenIWork.\n// We preserve them as-is and label the tool as displaying EST/EDT.\n// =====================================================================\nfunction getESTLabel(dateObj) {\n  // Returns \"EST\" or \"EDT\" based on whether date is in daylight saving\n  const year = dateObj.getFullYear();\n  const edtStart = nthSunday(year, 2, 2); // March 2nd Sunday\n  const edtEnd = nthSunday(year, 10, 1);  // November 1st Sunday\n  return (dateObj >= edtStart && dateObj < edtEnd) ? 'EDT' : 'EST';\n}\nfunction nthSunday(year, month, n) {\n  let count = 0;\n  for (let d = new Date(year, month, 1); d.getMonth() === month; d.setDate(d.getDate()+1)) {\n    if (d.getDay() === 0 && ++count === n) return new Date(d);\n  }\n  return null;\n}\n\n// =====================================================================\n// PARSE HELPERS\n// =====================================================================\nfunction parseDay(s) {\n  const [m,d,y] = s.split('/').map(Number);\n  return new Date(2000+y, m-1, d);\n}\nfunction parseTimeMin(s) {\n  const m = s.match(/(\\d+):(\\d+)\\s*(AM|PM)/i);\n  if (!m) return null;\n  let h = +m[1], min = +m[2];\n  const ap = m[3].toUpperCase();\n  if (ap === 'PM' && h !== 12) h += 12;\n  if (ap === 'AM' && h === 12) h = 0;\n  return h * 60 + min;\n}\nfunction getMondayOf(d) {\n  const dow = d.getDay(); // 0=Sun\n  const diff = dow === 0 ? -6 : 1 - dow;\n  const m = new Date(d);\n  m.setDate(m.getDate() + diff);\n  return m;\n}\nfunction dateStr(d) { return d.toISOString().slice(0,10); }\n\n// =====================================================================\n// PROCESS BOOKINGS\n// =====================================================================\nfunction processBookings(csvRows) {\n  // Find min date to establish semester week 1\n  let minDate = null;\n  csvRows.forEach(r => {\n    if (!r.Day) return;\n    const d = parseDay(r.Day);\n    if (!minDate || d < minDate) minDate = d;\n  });\n  const semMon = getMondayOf(minDate);\n\n  const bookings = [];\n  csvRows.forEach(r => {\n    if (!r.Day || !r['Start Time'] || !r['End Time']) return;\n    const startMin = parseTimeMin(r['Start Time']);\n    const endMin = parseTimeMin(r['End Time']);\n    if (startMin === null || endMin === null) return;\n\n    // Booking day logic: times 0\u2013359 min (12am\u20135:59am) belong to previous calendar day\n    const calDay = parseDay(r.Day);\n    const bookingDay = new Date(calDay);\n    if (startMin < 360) bookingDay.setDate(bookingDay.getDate() - 1);\n\n    // Duration: handle cross-midnight\n    let durMin = (endMin <= startMin) ? (1440 - startMin + endMin) : (endMin - startMin);\n\n    const weekNum = Math.floor((bookingDay - semMon) / (7 * 86400000)) + 1;\n    const building = (r.Building || '').trim();\n    const room = (r.Room || '').trim();\n    const roomKey = building + '-' + room;\n\n    bookings.push({\n      day: r.Day,\n      calDay,\n      bookingDay,\n      bookingDayStr: dateStr(bookingDay),\n      startMin,\n      endMin,\n      durHours: durMin / 60,\n      startHour: Math.floor(startMin / 60),\n      building,\n      room,\n      roomKey,\n      status: (r.Status || '').trim(),\n      eventType: (r['Event Type'] || '').trim(),\n      eventName: (r['Event Name'] || '').trim(),\n      name: (r.Name || '').trim(),\n      meta: roomLookup[roomKey] || null,\n      weekNum,\n      dow: bookingDay.getDay(),\n    });\n  });\n\n  return { bookings, semMon };\n}\n\n// =====================================================================\n// INIT\n// =====================================================================\nwindow.addEventListener('DOMContentLoaded', () => {\n  if (PREBAKED_ROWS) {\n    // Prebaked data present \u2014 rows are compact format [day, startMin, endMin, building, room, status, eventType, name, eventName]\n    const { bookings, semMon } = processCompactRows(PREBAKED_ROWS);\n    semesterMonday = semMon;\n    allBookings = bookings;\n    datasets = [{ label: PREBAKED_LABEL, bookings, semMon, dateRange: getDateRange(bookings) }];\n    initDataView();\n  } else {\n    // No data \u2014 show upload prompt\n    document.getElementById('no-data').style.display = 'flex';\n    document.getElementById('data-view').style.display = 'none';\n  }\n\n  // Tab clicks always wired up\n  document.querySelectorAll('.tab').forEach(t => {\n    t.addEventListener('click', () => { if (allBookings.length) switchTab(t.dataset.tab); });\n  });\n});\n\n// Process compact rows [day, startMin, endMin, building, room, status, eventType, name, eventName]\n// Used by prebaked/offline data \u2014 bypasses string time parsing.\nfunction processCompactRows(rows) {\n  let minDate = null;\n  rows.forEach(r => {\n    if (!r[0]) return;\n    const d = parseDay(r[0]);\n    if (!minDate || d < minDate) minDate = d;\n  });\n  const semMon = getMondayOf(minDate);\n\n  const bookings = rows.map(r => {\n    const startMin = r[1], endMin = r[2];\n    const calDay = parseDay(r[0]);\n    const bookingDay = new Date(calDay);\n    if (startMin < 360) bookingDay.setDate(bookingDay.getDate() - 1);\n    const durMin = (endMin <= startMin) ? (1440 - startMin + endMin) : (endMin - startMin);\n    const building = (r[3]||'').trim();\n    const room     = (r[4]||'').trim();\n    const roomKey  = building + '-' + room;\n    const weekNum  = Math.floor((bookingDay - semMon) / (7 * 86400000)) + 1;\n    return {\n      day: r[0], calDay, bookingDay, bookingDayStr: dateStr(bookingDay),\n      startMin, endMin, durHours: durMin / 60, startHour: Math.floor(startMin / 60),\n      building, room, roomKey,\n      status: r[5], eventType: r[6], name: r[7], eventName: (r[8]||''),\n      meta: roomLookup[roomKey] || null,\n      weekNum, dow: bookingDay.getDay()\n    };\n  });\n\n  return { bookings, semMon };\n}\n\nfunction initDataView() {\n  document.getElementById('no-data').style.display = 'none';\n  document.getElementById('data-view').style.display = 'flex';\n  buildFilterUI();\n  applyFilters();\n  updateBadge();\n}\n\nfunction getDateRange(bks) {\n  if (!bks.length) return null;\n  let min = bks[0].bookingDay, max = bks[0].bookingDay;\n  bks.forEach(b => { if (b.bookingDay < min) min = b.bookingDay; if (b.bookingDay > max) max = b.bookingDay; });\n  return { min, max };\n}\n\n// =====================================================================\n// FILTER UI\n// =====================================================================\nfunction dvBuilding(b) {\n  if (b.building === '160') return b.room.startsWith('A') ? '160A' : '160B';\n  return b.building;\n}\n\nfunction buildFilterUI() {\n  const BLDG_NAMES = {'136':'Bldg 136','150':'Bldg 150','160A':'160 \u00b7 A Level','160B':'160 \u00b7 B Level','1108':'Bldg 1108','921':'Bldg 921'};\n  const buildings = [...new Set(allBookings.map(b=>dvBuilding(b)))].sort((a,b) => parseInt(a)-parseInt(b) || a.localeCompare(b));\n  document.getElementById('f-buildings').innerHTML = buildings.map(bk =>\n    `<div class=\"filter-row\">\n      <input type=\"checkbox\" id=\"fb-${bk}\" value=\"${bk}\" checked onchange=\"applyFilters()\">\n      <label for=\"fb-${bk}\">${BLDG_NAMES[bk]||bk}<\/label>\n      <span class=\"filter-count\">${allBookings.filter(x=>dvBuilding(x)===bk).length}<\/span>\n      <span class=\"solo-btn\" onclick=\"soloFilter('f-buildings','${bk}')\">solo<\/span>\n    <\/div>`\n  ).join('');\n\n  const types = [...new Set(ROOM_META.map(r=>r.type))].sort();\n  document.getElementById('f-room-types').innerHTML = types.map(t =>\n    `<div class=\"filter-row\">\n      <input type=\"checkbox\" id=\"frt-${esc(t)}\" value=\"${t}\" checked onchange=\"applyFilters()\">\n      <label for=\"frt-${esc(t)}\">${t}<\/label>\n      <span class=\"solo-btn\" onclick=\"soloFilter('f-room-types','${t}')\">solo<\/span>\n    <\/div>`\n  ).join('');\n\n  const statuses = [...new Set(allBookings.map(b=>b.status))].sort();\n  document.getElementById('f-statuses').innerHTML = statuses.map(s =>\n    `<div class=\"filter-row\">\n      <input type=\"checkbox\" id=\"fs-${esc(s)}\" value=\"${s}\" checked onchange=\"applyFilters()\">\n      <label for=\"fs-${esc(s)}\">${s}<\/label>\n      <span class=\"filter-count\">${allBookings.filter(x=>x.status===s).length}<\/span>\n      <span class=\"solo-btn\" onclick=\"soloFilter('f-statuses','${s}')\">solo<\/span>\n    <\/div>`\n  ).join('');\n\n  const evtTypes = [...new Set(allBookings.map(b=>b.eventType))].sort();\n  document.getElementById('f-event-types').innerHTML = evtTypes.map(e =>\n    `<div class=\"filter-row\">\n      <input type=\"checkbox\" id=\"fe-${esc(e)}\" value=\"${e}\" checked onchange=\"applyFilters()\">\n      <label for=\"fe-${esc(e)}\">${e}<\/label>\n      <span class=\"filter-count\">${allBookings.filter(x=>x.eventType===e).length}<\/span>\n      <span class=\"solo-btn\" onclick=\"soloFilter('f-event-types','${e}')\">solo<\/span>\n    <\/div>`\n  ).join('');\n\n  const dr = getDateRange(allBookings);\n  if (dr) {\n    document.getElementById('f-start').value = dateStr(dr.min);\n    document.getElementById('f-end').value = dateStr(dr.max);\n  }\n\n  // Semester selector\n  const sel = document.getElementById('f-semester');\n  sel.innerHTML = '<option value=\"\">\u2014 Select Period \u2014<\/option>';\n  datasets.forEach((ds,i) => {\n    const o = document.createElement('option');\n    o.value = i; o.textContent = ds.label;\n    sel.appendChild(o);\n  });\n}\n\nfunction soloFilter(groupId, value) {\n  const checkboxes = document.querySelectorAll(`#${groupId} input[type=checkbox]`);\n  // If already soloed (only this one checked), restore all\n  const checked = [...checkboxes].filter(c=>c.checked);\n  if (checked.length === 1 && checked[0].value === value) {\n    checkboxes.forEach(c => c.checked = true);\n  } else {\n    checkboxes.forEach(c => { c.checked = (c.value === value); });\n  }\n  applyFilters();\n}\n\nfunction esc(s) { return s.replace(/[^a-zA-Z0-9]/g,'_'); }\n\nfunction getChecked(containerId) {\n  return [...document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)].map(c=>c.value);\n}\n\nfunction filterEvtList() {\n  const q = document.getElementById('evt-search').value.toLowerCase();\n  document.querySelectorAll('#f-event-types .filter-row').forEach(row => {\n    const lbl = row.querySelector('label')?.textContent.toLowerCase() || '';\n    row.style.display = lbl.includes(q) ? '' : 'none';\n  });\n}\n\nfunction applyFilters() {\n  const sv = document.getElementById('f-start').value;\n  const ev = document.getElementById('f-end').value;\n  const start = sv ? new Date(sv+'T00:00:00') : null;\n  const end   = ev ? new Date(ev+'T23:59:59') : null;\n  const blds  = getChecked('f-buildings');\n  const types = getChecked('f-room-types');\n  const stats = getChecked('f-statuses');\n  const evts  = getChecked('f-event-types');\n\n  const cLive  = document.getElementById('cap-live').checked;\n  const cIso   = document.getElementById('cap-iso').checked;\n  const cDrum  = document.getElementById('cap-drums').checked;\n  const cDstu  = document.getElementById('cap-drums-stu').checked;\n  const cSurr  = document.getElementById('cap-surround').checked;\n  const cAtm   = document.getElementById('cap-atmos').checked;\n\n  filteredBookings = allBookings.filter(b => {\n    if (start && b.bookingDay < start) return false;\n    if (end   && b.bookingDay > end)   return false;\n    if (!blds.includes(dvBuilding(b))) return false;\n    if (!stats.includes(b.status))     return false;\n    if (!evts.includes(b.eventType))   return false;\n    if (b.meta && !types.includes(b.meta.type)) return false;\n    if (cLive && (!b.meta || b.meta.live_room === 'No')) return false;\n    if (cIso  && (!b.meta || b.meta.live_room !== 'Iso Booth')) return false;\n    if (cDrum && (!b.meta || b.meta.drums !== 'Yes')) return false;\n    if (cDstu && (!b.meta || b.meta.drums_students !== 'Yes')) return false;\n    if (cSurr && (!b.meta || (!b.meta.monitoring.includes('Surround') && !b.meta.monitoring.includes('Atmos')))) return false;\n    if (cAtm  && (!b.meta || !b.meta.monitoring.includes('Atmos'))) return false;\n    return true;\n  });\n\n  document.getElementById('booking-count').textContent = filteredBookings.length.toLocaleString() + ' bookings';\n  renderCurrentTab();\n}\n\nfunction applySemesterPreset() {\n  const v = document.getElementById('f-semester').value;\n  if (v === '') return;\n  const ds = datasets[+v];\n  if (ds?.dateRange) {\n    document.getElementById('f-start').value = dateStr(ds.dateRange.min);\n    document.getElementById('f-end').value   = dateStr(ds.dateRange.max);\n    applyFilters();\n  }\n}\n\nfunction clearFilters() {\n  document.querySelectorAll('.sidebar input[type=checkbox]').forEach(c => c.checked = true);\n  ['cap-live','cap-iso','cap-drums','cap-drums-stu','cap-surround','cap-atmos'].forEach(id => {\n    document.getElementById(id).checked = false;\n  });\n  const dr = getDateRange(allBookings);\n  if (dr) {\n    document.getElementById('f-start').value = dateStr(dr.min);\n    document.getElementById('f-end').value   = dateStr(dr.max);\n  }\n  applyFilters();\n}\n\n// =====================================================================\n// TABS\n// =====================================================================\nfunction switchTab(name) {\n  currentTab = name;\n  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));\n  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-'+name));\n  renderCurrentTab();\n}\nfunction renderCurrentTab() {\n  if (currentTab === 'overview') renderOverview();\n  else if (currentTab === 'heatmaps') { renderHM1(); renderHM2(); renderHM3(); }\n  else if (currentTab === 'rooms') renderRooms();\n  else if (currentTab === 'trends') renderTrends();\n  else if (currentTab === 'dayview') renderDayView();\n  else if (currentTab === 'history') renderHistory();\n}\n\n// =====================================================================\n// OVERVIEW\n// =====================================================================\nfunction renderOverview() {\n  const b = filteredBookings;\n  const totalH = b.reduce((s,x)=>s+x.durHours, 0);\n  const uRooms = new Set(b.map(x=>x.roomKey)).size;\n  const uDays  = new Set(b.map(x=>x.bookingDayStr)).size;\n  const after  = b.filter(x=>x.startHour<6).length;\n  const byDay  = {};\n  b.forEach(x => { byDay[x.bookingDayStr] = (byDay[x.bookingDayStr]||0)+1; });\n  const peakDay = Object.entries(byDay).sort((a,z)=>z[1]-a[1])[0];\n\n  document.getElementById('stat-grid').innerHTML = [\n    ['#4f8ef7', b.length.toLocaleString(), 'Total Bookings', uDays+' booking days'],\n    ['#4abf8a', totalH.toFixed(0)+'h',     'Total Hours',    uDays>0?(totalH/uDays).toFixed(1)+'h avg/day':''],\n    ['#7b5ea7', uRooms,                    'Active Rooms',   'of '+ROOM_META.length+' tracked'],\n    ['#e0a85c', uDays>0?(b.length/uDays).toFixed(1):0, 'Avg Daily', 'bookings/day'],\n    ['#e05c5c', after,                     'After Midnight', '12am\u20136am bookings'],\n    peakDay ? ['#4f8ef7', peakDay[1], 'Peak Day', peakDay[0]] : null,\n  ].filter(Boolean).map(([color,val,lbl,sub]) =>\n    `<div class=\"stat-card\"><div class=\"accent-bar\" style=\"background:${color}\"><\/div><div class=\"val\">${val}<\/div><div class=\"lbl\">${lbl}<\/div><div class=\"sub\">${sub}<\/div><\/div>`\n  ).join('');\n\n  // Charts\n  const byRoom = countBy(b, x=>x.roomKey);\n  const topRooms = topN(byRoom, 10);\n  renderBarChart('chart-top-rooms', topRooms.map(([k,v])=>({label:roomLookup[k]?.name||k, val:v, color:'#4f8ef7'})), true);\n\n  const byEvt = countBy(b, x=>x.eventType);\n  renderBarChart('chart-event-types', topN(byEvt,10).map(([k,v])=>({label:k,val:v,color:'#7b5ea7'})), true);\n\n  const BLDG = {'136':'Bldg 136','150':'Bldg 150','160':'Bldg 160','1108':'1108','921':'921'};\n  const byBld = countBy(b, x=>x.building);\n  renderBarChart('chart-buildings', topN(byBld,10).map(([k,v])=>({label:BLDG[k]||k,val:v,color:'#4abf8a'})), true);\n\n  const STAT_CLR = {'Confirmed':'#4abf8a','Confirmed - Web':'#4f8ef7','Academic Confirmed':'#7b5ea7','Checked-In':'#e0a85c','Checked-Out':'#e05c5c','Late':'#e05c5c'};\n  const byStat = countBy(b, x=>x.status);\n  renderBarChart('chart-statuses', topN(byStat,10).map(([k,v])=>({label:k,val:v,color:STAT_CLR[k]||'#525c72'})), true);\n}\n\nfunction countBy(arr, fn) {\n  const m = {};\n  arr.forEach(x => { const k=fn(x); m[k]=(m[k]||0)+1; });\n  return m;\n}\nfunction topN(obj, n) {\n  return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,n);\n}\n\nfunction renderBarChart(id, data, showPct=false) {\n  const max = data.reduce((m,d)=>Math.max(m,d.val),1);\n  const total = showPct ? data.reduce((s,d)=>s+d.val,0) : 0;\n  document.getElementById(id).innerHTML = data.map(d => {\n    const pct = showPct && total>0 ? ` <span style=\"color:var(--text3)\">${(d.val/total*100).toFixed(1)}%<\/span>` : '';\n    return `<div class=\"bar-row\">\n      <div class=\"bar-label\" title=\"${d.label}\">${d.label}<\/div>\n      <div class=\"bar-track\"><div class=\"bar-fill\" style=\"width:${Math.round(d.val/max*100)}%;background:${d.color}\"><\/div><\/div>\n      <div class=\"bar-val\" style=\"width:70px;\">${d.val}${pct}<\/div>\n    <\/div>`;\n  }).join('');\n}\n\n// =====================================================================\n// HEATMAP COLOR\n// =====================================================================\nfunction heatColor(t) {\n  // 0=dark, 1=bright\n  const stops = [\n    [0,   [26,30,40]],\n    [0.2, [30,60,120]],\n    [0.5, [40,120,180]],\n    [0.75,[74,191,138]],\n    [1.0, [224,168,92]],\n  ];\n  if (t <= 0) return `rgb(${stops[0][1].join(',')})`;\n  for (let i=1;i<stops.length;i++) {\n    if (t <= stops[i][0]) {\n      const lo=stops[i-1], hi=stops[i];\n      const f=(t-lo[0])/(hi[0]-lo[0]);\n      return `rgb(${[0,1,2].map(j=>Math.round(lo[1][j]+f*(hi[1][j]-lo[1][j]))).join(',')})`;\n    }\n  }\n  return `rgb(224,168,92)`;\n}\n\nfunction makeLegend(containerId) {\n  let html = '<span style=\"margin-right:4px;\">Low<\/span>';\n  for (let i=0;i<=12;i++) html += `<div class=\"hm-legend-swatch\" style=\"background:${heatColor(i/12)}\"><\/div>`;\n  html += '<span style=\"margin-left:4px;\">High<\/span>';\n  document.getElementById(containerId).innerHTML = html;\n  document.getElementById(containerId).className = 'hm-legend';\n}\n\n// =====================================================================\n// HM1: DOW \u00d7 Hour\n// =====================================================================\nfunction renderHM1() {\n  const metric = document.getElementById('hm1-metric').value;\n  const b = filteredBookings;\n  const HOURS = [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5];\n  const DAYS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];\n  const HLBL  = h => h===0?'12a':h<12?h+'a':h===12?'12p':(h-12)+'p';\n\n  // matrix[dow][hour] = {count, hours}\n  const mat = Array.from({length:7},()=>Object.fromEntries(HOURS.map(h=>[h,{c:0,h:0}])));\n  b.forEach(x => {\n    const cell = mat[x.dow]?.[x.startHour];\n    if (cell) { cell.c++; cell.h += x.durHours; }\n  });\n\n  let maxV = 0;\n  DAYS.forEach((_,d)=>HOURS.forEach(h=>{ const v=metric==='count'?mat[d][h].c:mat[d][h].h; if(v>maxV)maxV=v; }));\n\n  let html = '<table class=\"heatmap-table\"><thead><tr><th><\/th>';\n  HOURS.forEach(h => html += `<th>${HLBL(h)}<\/th>`);\n  html += '<\/tr><\/thead><tbody>';\n  DAYS.forEach((day,d) => {\n    html += `<tr><td class=\"hm-row-label\">${day}<\/td>`;\n    HOURS.forEach(h => {\n      const cell = mat[d][h];\n      const val = metric==='count' ? cell.c : cell.h;\n      const tip = `${day} ${HLBL(h)}<br>${cell.c} bookings / ${cell.h.toFixed(1)}h`;\n      html += `<td><div class=\"hm-cell\" style=\"background:${heatColor(maxV?val/maxV:0)}\" onmouseenter=\"tip(event,'${tip}')\" onmouseleave=\"untip()\"><\/div><\/td>`;\n    });\n    html += '<\/tr>';\n  });\n  html += '<\/tbody><\/table>';\n  document.getElementById('hm1').innerHTML = html;\n  makeLegend('hm1-legend');\n}\n\n// =====================================================================\n// HM2: Room \u00d7 Week\n// =====================================================================\nfunction renderHM2() {\n  const metric = document.getElementById('hm2-metric').value;\n  const b = filteredBookings;\n  const AVAIL_PER_WEEK = 21 * 7; // 147h\n\n  const weeks = [...new Set(b.map(x=>x.weekNum))].sort((a,z)=>a-z);\n  const roomKeys = [...new Set(b.map(x=>x.roomKey))].sort();\n\n  const mat = {};\n  roomKeys.forEach(k => { mat[k] = {}; weeks.forEach(w => mat[k][w]={c:0,h:0}); });\n  b.forEach(x => {\n    const cell = mat[x.roomKey]?.[x.weekNum];\n    if (cell) { cell.c++; cell.h += x.durHours; }\n  });\n\n  let maxV = 0;\n  roomKeys.forEach(k => weeks.forEach(w => {\n    const v = metric==='count'?mat[k][w].c : metric==='hours'?mat[k][w].h : mat[k][w].h/AVAIL_PER_WEEK*100;\n    if(v>maxV) maxV=v;\n  }));\n\n  let html = '<table class=\"week-hm-table\"><thead><tr><th style=\"text-align:right;padding-right:7px;\"><\/th>';\n  weeks.forEach(w => html += `<th>W${w}<\/th>`);\n  html += '<\/tr><\/thead><tbody>';\n  roomKeys.forEach(k => {\n    const name = roomLookup[k]?.name || k;\n    html += `<tr><td class=\"week-hm-room-label\">${name}<\/td>`;\n    weeks.forEach(w => {\n      const cell = mat[k][w];\n      const val = metric==='count'?cell.c : metric==='hours'?cell.h : cell.h/AVAIL_PER_WEEK*100;\n      const tip = `${name} / Week ${w}<br>${cell.c} bookings<br>${cell.h.toFixed(1)}h<br>${(cell.h/AVAIL_PER_WEEK*100).toFixed(1)}% util`;\n      html += `<td><div class=\"week-hm-cell\" style=\"background:${heatColor(maxV?val/maxV:0)}\" onmouseenter=\"tip(event,'${tip}')\" onmouseleave=\"untip()\"><\/div><\/td>`;\n    });\n    html += '<\/tr>';\n  });\n  html += '<\/tbody><\/table>';\n  document.getElementById('hm2').innerHTML = html;\n  makeLegend('hm2-legend');\n}\n\n// =====================================================================\n// HM3: After-Midnight \u00d7 Building \u00d7 DOW\n// =====================================================================\nfunction renderHM3() {\n  // After-midnight = starts between 12:00am (0) and 5:59am (359 min), exclusive of exactly midnight end\n  // startHour 0\u20135 AND startMin > 0 (not exactly midnight) AND startMin < 360\n  const b = filteredBookings.filter(x => x.startMin > 0 && x.startMin < 360);\n  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];\n  const BLDG = {'136':'Bldg 136','150':'Bldg 150','160A':'160 \u00b7 A Level','160B':'160 \u00b7 B Level','1108':'1108','921':'Bldg 921'};\n  const blds = [...new Set(b.map(x=>dvBuilding(x)))].sort((a,b) => parseInt(a)-parseInt(b) || a.localeCompare(b));\n  if (!b.length) { document.getElementById('hm3').innerHTML='<div style=\"color:var(--text3);font-size:11px;padding:8px;\">No after-midnight bookings in filtered range.<\/div>'; return; }\n\n  const mat = {};\n  blds.forEach(bld => { mat[bld] = Array(7).fill(0); });\n  b.forEach(x => { const bk = dvBuilding(x); if(mat[bk]) mat[bk][x.dow]++; });\n  let maxV = 0;\n  blds.forEach(bld => mat[bld].forEach(v => { if(v>maxV)maxV=v; }));\n\n  let html = '<table class=\"heatmap-table\"><thead><tr><th><\/th>';\n  DAYS.forEach(d => html += `<th>${d}<\/th>`);\n  html += '<\/tr><\/thead><tbody>';\n  blds.forEach(bld => {\n    html += `<tr><td class=\"hm-row-label\" style=\"width:80px;\">${BLDG[bld]||bld}<\/td>`;\n    DAYS.forEach((_,d) => {\n      const v = mat[bld][d];\n      const tip = `${BLDG[bld]||bld} / ${DAYS[d]}<br>${v} after-midnight bookings`;\n      html += `<td><div class=\"hm-cell\" style=\"background:${heatColor(maxV?v/maxV:0)};width:32px;height:24px;\" onmouseenter=\"tip(event,'${tip}')\" onmouseleave=\"untip()\"><\/div><\/td>`;\n    });\n    html += '<\/tr>';\n  });\n  html += '<\/tbody><\/table>';\n  document.getElementById('hm3').innerHTML = html;\n}\n\n// =====================================================================\n// ROOMS TABLE\n// =====================================================================\nlet roomColSort = { col: 'util', dir: 'desc' };\n\nfunction roomSortCol(col) {\n  if (roomColSort.col === col) {\n    roomColSort.dir = roomColSort.dir === 'desc' ? 'asc' : 'desc';\n  } else {\n    roomColSort.col = col;\n    roomColSort.dir = ['bookings','hours','util'].includes(col) ? 'desc' : 'asc';\n  }\n  // Update header classes\n  document.querySelectorAll('#tab-rooms .data-table th').forEach(th => {\n    th.classList.remove('sort-asc','sort-desc');\n    const ind = th.querySelector('.sort-ind');\n    if (ind && ind.dataset.col === col) th.classList.add('sort-'+roomColSort.dir);\n  });\n  renderRooms();\n}\n\n// TRENDS (SVG charts)\n// =====================================================================\nfunction renderTrends() {\n  const b = filteredBookings;\n  const byWeek = {}, byWeekH = {};\n  b.forEach(x => { byWeek[x.weekNum]=(byWeek[x.weekNum]||0)+1; byWeekH[x.weekNum]=(byWeekH[x.weekNum]||0)+x.durHours; });\n  const weeks = Object.keys(byWeek).map(Number).sort((a,z)=>a-z);\n\n  svgBar('chart-weekly', weeks.map(w=>`W${w}`), weeks.map(w=>byWeek[w]), '#4f8ef7', 160);\n\n  // Room type stacked\n  const TYPES = [...new Set(ROOM_META.map(r=>r.type))];\n  const TYPE_CLR = {'Studio':'#4f8ef7','Production Suite':'#7b5ea7','Edit Suite':'#4abf8a','Other':'#525c72'};\n  const typeW = {};\n  TYPES.forEach(t => { typeW[t]={}; weeks.forEach(w=>typeW[t][w]=0); });\n  b.forEach(x => { if(x.meta&&typeW[x.meta.type]) typeW[x.meta.type][x.weekNum]=(typeW[x.meta.type][x.weekNum]||0)+x.durHours; });\n  svgStacked('chart-type-trend', weeks.map(w=>`W${w}`), TYPES.map(t=>({label:t,color:TYPE_CLR[t]||'#525c72',vals:weeks.map(w=>typeW[t][w]||0)})), 150);\n\n  // Top 5 event types stacked\n  const evtCounts = countBy(b,x=>x.eventType);\n  const top5evts = topN(evtCounts,5).map(([k])=>k);\n  const EVT_CLR = ['#4f8ef7','#7b5ea7','#4abf8a','#e0a85c','#e05c5c'];\n  const evtW = {};\n  top5evts.forEach(e=>{evtW[e]={};weeks.forEach(w=>evtW[e][w]=0);});\n  b.forEach(x=>{ if(evtW[x.eventType]) evtW[x.eventType][x.weekNum]=(evtW[x.eventType][x.weekNum]||0)+1; });\n  svgStacked('chart-evt-trend', weeks.map(w=>`W${w}`), top5evts.map((e,i)=>({label:e.length>16?e.slice(0,14)+'\u2026':e,color:EVT_CLR[i],vals:weeks.map(w=>evtW[e][w]||0)})), 150);\n\n  // Daily dist\n  const HOURS = [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5];\n  const HLBL  = h => h===0?'12a':h<12?h+'a':h===12?'12p':(h-12)+'p';\n  const dist = {};\n  HOURS.forEach(h=>dist[h]=0);\n  b.forEach(x=>{ if(dist[x.startHour]!==undefined) dist[x.startHour]++; });\n  svgBar('chart-daily-dist', HOURS.map(HLBL), HOURS.map(h=>dist[h]), '#4abf8a', 130);\n}\n\nfunction svgBar(id, labels, vals, color, h) {\n  const el = document.getElementById(id);\n  if (!el||!labels.length) return;\n  const W = el.offsetWidth||600, H=h;\n  const PAD={t:8,r:8,b:24,l:36};\n  const cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;\n  const maxV=Math.max(...vals,1);\n  const bw=Math.max(2,cW/labels.length-2);\n  let s=`<svg width=\"${W}\" height=\"${H}\" style=\"overflow:visible\">`;\n  for(let i=0;i<=4;i++){\n    const y=PAD.t+cH*(1-i/4);\n    s+=`<line x1=\"${PAD.l}\" y1=\"${y}\" x2=\"${PAD.l+cW}\" y2=\"${y}\" stroke=\"#252a38\" stroke-width=\"1\"/>`;\n    s+=`<text x=\"${PAD.l-3}\" y=\"${y+3}\" text-anchor=\"end\" fill=\"#525c72\" font-size=\"9\" font-family=\"IBM Plex Mono,monospace\">${Math.round(maxV*i/4)}<\/text>`;\n  }\n  labels.forEach((lbl,i)=>{\n    const x=PAD.l+i*(cW/labels.length)+(cW/labels.length-bw)/2;\n    const bh=(vals[i]/maxV)*cH;\n    const tipTxt=`${lbl}: ${vals[i]}`;\n    s+=`<rect x=\"${x.toFixed(1)}\" y=\"${(PAD.t+cH-bh).toFixed(1)}\" width=\"${bw.toFixed(1)}\" height=\"${Math.max(bh,0).toFixed(1)}\" fill=\"${color}\" rx=\"2\" opacity=\"0.85\"\n      onmouseenter=\"tip(event,'${tipTxt.replace(/'/g,'&#39;')}')\" onmouseleave=\"untip()\" style=\"cursor:default\"/>`;\n    if(labels.length<=24) s+=`<text x=\"${(x+bw/2).toFixed(1)}\" y=\"${(PAD.t+cH+14).toFixed(1)}\" text-anchor=\"middle\" fill=\"#525c72\" font-size=\"9\" font-family=\"IBM Plex Mono,monospace\">${lbl}<\/text>`;\n  });\n  s+='<\/svg>';\n  el.innerHTML=s;\n}\n\nfunction svgStacked(id, labels, series, h) {\n  const el = document.getElementById(id);\n  if(!el||!labels.length) return;\n  const W=el.offsetWidth||600, H=h;\n  const PAD={t:8,r:120,b:24,l:36};\n  const cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;\n  let maxV=0;\n  labels.forEach((_,i)=>{ const s=series.reduce((a,sr)=>a+sr.vals[i],0); if(s>maxV)maxV=s; });\n  maxV=Math.max(maxV,1);\n  const bw=Math.max(2,cW/labels.length-2);\n  let s=`<svg width=\"${W}\" height=\"${H}\" style=\"overflow:visible\">`;\n  for(let i=0;i<=4;i++) s+=`<line x1=\"${PAD.l}\" y1=\"${PAD.t+cH*(1-i/4)}\" x2=\"${PAD.l+cW}\" y2=\"${PAD.t+cH*(1-i/4)}\" stroke=\"#252a38\" stroke-width=\"1\"/>`;\n  labels.forEach((lbl,i)=>{\n    let cum=0;\n    series.forEach(sr=>{\n      const bh=(sr.vals[i]/maxV)*cH;\n      const x=PAD.l+i*(cW/labels.length)+(cW/labels.length-bw)/2;\n      const tipTxt=`${lbl} / ${sr.label}: ${sr.vals[i]}`;\n      s+=`<rect x=\"${x.toFixed(1)}\" y=\"${(PAD.t+cH-cum-bh).toFixed(1)}\" width=\"${bw.toFixed(1)}\" height=\"${Math.max(bh,0).toFixed(1)}\" fill=\"${sr.color}\" rx=\"1\" opacity=\"0.85\"\n        onmouseenter=\"tip(event,'${tipTxt.replace(/'/g,'&#39;')}')\" onmouseleave=\"untip()\" style=\"cursor:default\"/>`;\n      cum+=bh;\n    });\n    if(labels.length<=24) s+=`<text x=\"${(PAD.l+i*(cW/labels.length)+bw/2).toFixed(1)}\" y=\"${(PAD.t+cH+14).toFixed(1)}\" text-anchor=\"middle\" fill=\"#525c72\" font-size=\"9\" font-family=\"IBM Plex Mono,monospace\">${lbl}<\/text>`;\n  });\n  series.forEach((sr,i)=>{\n    s+=`<rect x=\"${W-PAD.r+8}\" y=\"${PAD.t+i*16}\" width=\"10\" height=\"10\" fill=\"${sr.color}\" rx=\"2\"/>`;\n    s+=`<text x=\"${W-PAD.r+22}\" y=\"${PAD.t+i*16+9}\" fill=\"#8892aa\" font-size=\"9\" font-family=\"IBM Plex Mono,monospace\">${sr.label}<\/text>`;\n  });\n  s+='<\/svg>';\n  el.innerHTML=s;\n}\n\n// =====================================================================\n// HISTORY\n// =====================================================================\nfunction renderHistory() {\n  const list = document.getElementById('history-datasets');\n  list.innerHTML = '<table class=\"data-table\"><thead><tr><th>Dataset<\/th><th>Date Range<\/th><th>Bookings<\/th><th>Rooms<\/th><th>Hours<\/th><\/tr><\/thead><tbody>'+\n    datasets.map((ds,i)=>{\n      const dr=ds.dateRange;\n      const h=ds.bookings.reduce((s,b)=>s+b.durHours,0);\n      const r=new Set(ds.bookings.map(b=>b.roomKey)).size;\n      return `<tr><td style=\"color:var(--text)\">${ds.label}<\/td><td>${dr?dateStr(dr.min)+' \u2192 '+dateStr(dr.max):'\u2014'}<\/td><td>${ds.bookings.length.toLocaleString()}<\/td><td>${r}<\/td><td>${h.toFixed(0)}h<\/td><\/tr>`;\n    }).join('')+'<\/tbody><\/table>';\n\n  const card=document.getElementById('compare-card');\n  const content=document.getElementById('compare-content');\n  if(datasets.length<2){card.style.display='none';return;}\n  card.style.display='block';\n  const metrics=datasets.map(ds=>({\n    label:ds.label,\n    total:ds.bookings.length,\n    hours:ds.bookings.reduce((s,b)=>s+b.durHours,0),\n    rooms:new Set(ds.bookings.map(b=>b.roomKey)).size,\n    after:ds.bookings.filter(b=>b.startHour<6).length,\n  }));\n  const mxT=Math.max(...metrics.map(m=>m.total));\n  const mxH=Math.max(...metrics.map(m=>m.hours));\n  const CLR=['#4f8ef7','#7b5ea7','#4abf8a','#e0a85c'];\n  content.innerHTML=`<div class=\"two-col\" style=\"margin-top:8px;\">\n    <div><div class=\"section-sub\" style=\"margin-bottom:8px;\">Total Bookings<\/div>${metrics.map((m,i)=>`<div class=\"bar-row\"><div class=\"bar-label\" title=\"${m.label}\">${m.label}<\/div><div class=\"bar-track\"><div class=\"bar-fill\" style=\"width:${Math.round(m.total/mxT*100)}%;background:${CLR[i%4]}\"><\/div><\/div><div class=\"bar-val\">${m.total.toLocaleString()}<\/div><\/div>`).join('')}<\/div>\n    <div><div class=\"section-sub\" style=\"margin-bottom:8px;\">Total Hours<\/div>${metrics.map((m,i)=>`<div class=\"bar-row\"><div class=\"bar-label\" title=\"${m.label}\">${m.label}<\/div><div class=\"bar-track\"><div class=\"bar-fill\" style=\"width:${Math.round(m.hours/mxH*100)}%;background:${CLR[i%4]}\"><\/div><\/div><div class=\"bar-val\">${m.hours.toFixed(0)}h<\/div><\/div>`).join('')}<\/div>\n  <\/div>`;\n}\n\n// =====================================================================\n// FILE UPLOAD\n// =====================================================================\nfunction parseCSV(text) {\n  const lines = text.split('\\n');\n  const headers = parseCSVLine(lines[0]).map(s=>s.trim().replace(/^\"|\"$/g,''));\n  const rows = [];\n  for(let i=1;i<lines.length;i++){\n    const line=lines[i].trim();\n    if(!line) continue;\n    const vals=parseCSVLine(line);\n    if(vals.length<headers.length-2) continue;\n    const row={};\n    headers.forEach((h,j)=>row[h]=(vals[j]||'').trim());\n    rows.push(row);\n  }\n  return rows;\n}\nfunction parseCSVLine(line){\n  const r=[]; let cur='', inQ=false;\n  for(let i=0;i<line.length;i++){\n    const c=line[i];\n    if(c==='\"'){inQ=!inQ;}\n    else if(c===','&&!inQ){r.push(cur);cur='';}\n    else cur+=c;\n  }\n  r.push(cur); return r;\n}\n\n// =====================================================================\n// DEDUPLICATION\n// =====================================================================\n// Dedup key: bookingDayStr + building + room + startMin + endMin + status\n// This uniquely identifies a real booking slot regardless of which export it came from.\nfunction dedupKey(b) {\n  return `${b.bookingDayStr}|${b.building}|${b.room}|${b.startMin}|${b.endMin}|${b.status}`;\n}\n\n// Deduplicate a flat array of bookings, returning {deduped, removed} counts.\nfunction deduplicateBookings(bookings) {\n  const seen = new Set();\n  const deduped = [];\n  let removed = 0;\n  for (const b of bookings) {\n    const k = dedupKey(b);\n    if (seen.has(k)) { removed++; continue; }\n    seen.add(k);\n    deduped.push(b);\n  }\n  return { deduped, removed };\n}\n\n// Merge incoming bookings into existing allBookings, deduplicating across both.\n// Returns { merged, removed }.\nfunction mergeIntoAll(incoming) {\n  const combined = [...allBookings, ...incoming];\n  const { deduped, removed } = deduplicateBookings(combined);\n  return { merged: deduped, removed };\n}\n\n// Compare two date ranges for exact equality (same min and max day string).\nfunction dateRangesEqual(dr1, dr2) {\n  if (!dr1 || !dr2) return false;\n  return dateStr(dr1.min) === dateStr(dr2.min) && dateStr(dr1.max) === dateStr(dr2.max);\n}\n\n// Show a brief non-blocking notice in the header area.\nfunction showNotice(msg, color='var(--accent4)') {\n  let el = document.getElementById('merge-notice');\n  if (!el) {\n    el = document.createElement('span');\n    el.id = 'merge-notice';\n    el.style.cssText = 'font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid;transition:opacity 0.5s;';\n    document.getElementById('booking-count').insertAdjacentElement('afterend', el);\n  }\n  el.textContent = msg;\n  el.style.color = color;\n  el.style.borderColor = color;\n  el.style.opacity = '1';\n  clearTimeout(el._timer);\n  el._timer = setTimeout(() => { el.style.opacity = '0'; }, 4000);\n}\n\nfunction handleCSVUpload(event) {\n  const file = event.target.files[0]; if (!file) return;\n  // Reset input so the same file can be re-uploaded if needed\n  event.target.value = '';\n  const reader = new FileReader();\n  reader.onload = e => {\n    try {\n      const rows = parseCSV(e.target.result);\n      const { bookings: incoming, semMon } = processBookings(rows);\n      const incomingDR = getDateRange(incoming);\n      const incomingLabel = incomingDR ? `${dateStr(incomingDR.min)} \u2192 ${dateStr(incomingDR.max)}` : 'Uploaded';\n      const firstLoad = allBookings.length === 0;\n\n      // Find if any existing dataset has an identical date range\n      const matchIdx = datasets.findIndex(ds => dateRangesEqual(ds.dateRange, incomingDR));\n\n      if (matchIdx !== -1) {\n        // Exact date range match \u2014 replace that dataset, dedup whole pool\n        const { merged, removed } = mergeIntoAll(incoming);\n        allBookings = merged;\n        datasets[matchIdx] = { label: incomingLabel, bookings: incoming, semMon, dateRange: incomingDR };\n        // Re-derive allBookings from all datasets (clean rebuild)\n        const { deduped } = deduplicateBookings(datasets.flatMap(ds => ds.bookings));\n        allBookings = deduped;\n        const msg = removed > 0\n          ? `Replaced existing dataset, removed ${removed} duplicate booking${removed===1?'':'s'}`\n          : 'Replaced existing dataset \u2014 no duplicates found';\n        showNotice(msg);\n      } else {\n        // Different date range \u2014 merge and dedup across everything\n        const { merged, removed } = mergeIntoAll(incoming);\n        allBookings = merged;\n        datasets.push({ label: incomingLabel, bookings: incoming, semMon, dateRange: incomingDR });\n        const msg = removed > 0\n          ? `Merged ${incoming.length.toLocaleString()} bookings, removed ${removed} duplicate${removed===1?'':'s'}`\n          : `Merged ${incoming.length.toLocaleString()} bookings \u2014 no duplicates found`;\n        showNotice(msg);\n      }\n\n      if (firstLoad) {\n        initDataView();\n      } else {\n        buildFilterUI();\n        applyFilters();\n        updateBadge();\n      }\n    } catch(err) { alert('CSV parse error: ' + err.message); }\n  };\n  reader.readAsText(file, 'windows-1252');\n}\n\nfunction handleSnapshotLoad(event) {\n  const file = event.target.files[0]; if (!file) return;\n  event.target.value = '';\n  const reader = new FileReader();\n  reader.onload = e => {\n    try {\n      const snap = JSON.parse(e.target.result);\n      if (snap.version !== 1 || !snap.datasets) throw new Error('Invalid snapshot format');\n\n      let totalIncoming = 0;\n      snap.datasets.forEach(ds => {\n        // Reconstruct booking objects from compact snapshot rows\n        const snapDR = ds.dateRange\n          ? { min: new Date(ds.dateRange.min+'T00:00:00'), max: new Date(ds.dateRange.max+'T00:00:00') }\n          : null;\n        const semMon = snapDR ? getMondayOf(snapDR.min) : null;\n\n        const bookings = ds.rows.map(r => {\n          const startMin = r[1], endMin = r[2];\n          const calDay = parseDay(r[0]);\n          const bookingDay = new Date(calDay);\n          if (startMin < 360) bookingDay.setDate(bookingDay.getDate() - 1);\n          const durMin = (endMin <= startMin) ? (1440 - startMin + endMin) : (endMin - startMin);\n          const building = (r[3]||'').trim();\n          const room = (r[4]||'').trim();\n          const roomKey = building + '-' + room;\n          const wSemMon = semMon || getMondayOf(bookingDay);\n          const weekNum = Math.floor((bookingDay - wSemMon) / (7 * 86400000)) + 1;\n          return {\n            day: r[0], calDay, bookingDay, bookingDayStr: dateStr(bookingDay),\n            startMin, endMin, durHours: durMin/60, startHour: Math.floor(startMin/60),\n            building, room, roomKey, status: r[5], eventType: r[6], name: r[7], eventName: (r[8]||''),\n            meta: roomLookup[roomKey] || null, weekNum, dow: bookingDay.getDay()\n          };\n        });\n\n        const dateRange = snapDR || getDateRange(bookings);\n        totalIncoming += bookings.length;\n\n        // Always merge+dedup for snapshots \u2014 treat as historical record\n        const matchIdx = datasets.findIndex(d => dateRangesEqual(d.dateRange, dateRange));\n        if (matchIdx !== -1) {\n          // Merge into existing dataset for that range\n          const combined = [...datasets[matchIdx].bookings, ...bookings];\n          const { deduped } = deduplicateBookings(combined);\n          datasets[matchIdx] = { ...datasets[matchIdx], bookings: deduped };\n        } else {\n          datasets.push({ label: ds.label, bookings, dateRange });\n        }\n      });\n\n      // Rebuild allBookings from all datasets, fully deduped\n      const { deduped, removed } = deduplicateBookings(datasets.flatMap(d => d.bookings));\n      const firstLoad = allBookings.length === 0;\n      allBookings = deduped;\n\n      if (firstLoad) {\n        initDataView();\n      } else {\n        buildFilterUI();\n        applyFilters();\n        updateBadge();\n      }\n\n      const msg = removed > 0\n        ? `Loaded snapshot (${snap.datasets.length} dataset${snap.datasets.length===1?'':'s'}), removed ${removed} duplicate${removed===1?'':'s'}`\n        : `Loaded snapshot (${snap.datasets.length} dataset${snap.datasets.length===1?'':'s'}) \u2014 no duplicates found`;\n      showNotice(msg);\n    } catch(err) { alert('Snapshot load error: ' + err.message); }\n  };\n  reader.readAsText(file);\n}\n\n// =====================================================================\n// EXPORT SNAPSHOT\n// =====================================================================\nfunction exportSnapshot() {\n  const snap={\n    version:1,\n    exportedAt:new Date().toISOString(),\n    datasets:datasets.map(ds=>({\n      label:ds.label,\n      dateRange:ds.dateRange?{min:dateStr(ds.dateRange.min),max:dateStr(ds.dateRange.max)}:null,\n      rows:ds.bookings.map(b=>[b.day,b.startMin,b.endMin,b.building,b.room,b.status,b.eventType,b.name,b.eventName||''])\n    }))\n  };\n  const blob=new Blob([JSON.stringify(snap)],{type:'application/json'});\n  const a=document.createElement('a');\n  a.href=URL.createObjectURL(blob);\n  a.download=`studiopulse-snapshot-${new Date().toISOString().slice(0,10)}.json`;\n  a.click();\n  URL.revokeObjectURL(a.href);\n}\n\nfunction openOfflineModal() {\n  if (!allBookings.length) { showNotice('No data loaded yet.', 'var(--accent3)'); return; }\n  document.getElementById('offline-modal').classList.remove('hidden');\n}\n\nfunction doExportOfflineHTML() {\n  document.getElementById('offline-modal').classList.add('hidden');\n  const scope = document.querySelector('input[name=offline-scope]:checked').value;\n\n  const booksToEmbed = scope === 'filtered' ? filteredBookings : allBookings;\n  const compactRows = booksToEmbed.map(b =>\n    [b.day, b.startMin, b.endMin, b.building, b.room, b.status, b.eventType, b.name, b.eventName||'']\n  );\n\n  const dr = getDateRange(booksToEmbed);\n  const label = dr\n    ? (scope === 'filtered'\n        ? `Filtered: ${dateStr(dr.min)} \u2192 ${dateStr(dr.max)}`\n        : `All datasets: ${dateStr(dr.min)} \u2192 ${dateStr(dr.max)}`)\n    : 'Exported';\n\n  // Reconstruct the HTML from the stored template halves, splicing in live data.\n  // This is reliable because _HTML_BEFORE/_HTML_AFTER are the original source,\n  // not the runtime DOM \u2014 so there are no duplicate const declarations.\n  const dataBlock =\n    `const ROOM_META = ${JSON.stringify(ROOM_META)};\\n` +\n    `const PREBAKED_ROWS = ${JSON.stringify(compactRows)};\\n` +\n    `const PREBAKED_LABEL = ${JSON.stringify(label)};`;\n\n  const offlineHTML = _HTML_BEFORE + dataBlock + _HTML_AFTER;\n\n  const blob = new Blob([offlineHTML], { type: 'text/html' });\n  const a = document.createElement('a');\n  a.href = URL.createObjectURL(blob);\n  const dateTag = new Date().toISOString().slice(0, 10);\n  a.download = `studiopulse-offline-${scope}-${dateTag}.html`;\n  a.click();\n  URL.revokeObjectURL(a.href);\n  showNotice(`Offline HTML generated (${compactRows.length.toLocaleString()} bookings)`);\n}\n\nfunction tip(e,html){\n  const t=document.getElementById('tooltip');\n  t.innerHTML=html; t.classList.add('show');\n  t.style.left=(e.clientX+12)+'px'; t.style.top=(e.clientY-8)+'px';\n}\nfunction untip(){ document.getElementById('tooltip').classList.remove('show'); }\ndocument.addEventListener('mousemove',e=>{\n  const t=document.getElementById('tooltip');\n  if(t.classList.contains('show')){ t.style.left=(e.clientX+12)+'px'; t.style.top=(e.clientY-8)+'px'; }\n});\n\n// =====================================================================\n// MISC\n// =====================================================================\nfunction updateBadge(){\n  const dr=getDateRange(allBookings);\n  if(dr){\n    document.getElementById('data-badge').textContent=dateStr(dr.min)+' \u2192 '+dateStr(dr.max);\n    document.getElementById('data-badge').className='badge active';\n  }\n}\nfunction handleDrop(e){\n  e.preventDefault();\n  document.getElementById('upload-zone').classList.remove('drag');\n  const f=e.dataTransfer.files[0];\n  if(f) handleCSVUpload({target:{files:[f]}});\n}\nfunction handleDragOver(e){e.preventDefault();document.getElementById('upload-zone').classList.add('drag');}\nfunction handleDragLeave(){document.getElementById('upload-zone').classList.remove('drag');}\n\n// =====================================================================\n// DAY VIEW\n// =====================================================================\nlet dvCurrentDay = null;\n\nfunction dvAllDays() {\n  return [...new Set(allBookings.map(b => b.bookingDayStr))].sort();\n}\n\nfunction dvInit() {\n  const days = dvAllDays();\n  if (!days.length) return;\n  if (!dvCurrentDay || !days.includes(dvCurrentDay)) dvCurrentDay = days[days.length - 1];\n}\n\nfunction dvStep(dir) {\n  const days = dvAllDays();\n  if (!days.length) return;\n  const idx = days.indexOf(dvCurrentDay);\n  const next = idx + dir;\n  if (next < 0 || next >= days.length) return;\n  dvCurrentDay = days[next];\n  renderDayView();\n}\n\nfunction dvSetDate(val) {\n  const days = dvAllDays();\n  if (days.includes(val)) {\n    dvCurrentDay = val;\n  } else {\n    let closest = days[0];\n    for (const d of days) { if (d <= val) closest = d; else break; }\n    dvCurrentDay = closest;\n  }\n  renderDayView();\n}\n\nfunction renderDayView() {\n  dvInit();\n  const days = dvAllDays();\n  if (!days.length || !dvCurrentDay) {\n    document.getElementById('dv-wrap').innerHTML = '<div class=\"dv-no-data\">No data loaded.<\/div>';\n    return;\n  }\n\n  const lbl = document.getElementById('dv-date-lbl');\n  const inp = document.getElementById('dv-date-input');\n  const d = new Date(dvCurrentDay + 'T12:00:00');\n  const DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\n  lbl.textContent = DOW[d.getDay()] + ', ' + dvCurrentDay;\n  inp.value = dvCurrentDay;\n\n  // Day view respects sidebar filters (building, status, event type, etc.)\n  const dayBooks = filteredBookings.filter(b => b.bookingDayStr === dvCurrentDay);\n\n  const totalH = dayBooks.reduce((s,b)=>s+b.durHours,0);\n  const activeRooms = new Set(dayBooks.map(b=>b.roomKey)).size;\n  document.getElementById('dv-stats').innerHTML =\n    `<span><strong>${dayBooks.length}<\/strong> bookings<\/span>` +\n    `<span><strong>${totalH.toFixed(1)}h<\/strong> booked<\/span>` +\n    `<span><strong>${activeRooms}<\/strong> rooms active<\/span>`;\n\n  // Booking day hours: 9am\u20135am (21 hours). Map to 0-based offsets for easy math.\n  // offset 0 = 9am, offset 12 = 9pm, offset 20 = 5am\n  const HOURS = [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5];\n  const N = HOURS.length; // 21\n  const HLBL = h => h===0?'12am':h<12?h+'am':h===12?'12pm':(h-12)+'pm';\n\n  // Convert a clock-hour to a booking-day offset (9am = 0)\n  const hourToOffset = h => { const o = h < 9 ? h + 24 - 9 : h - 9; return o < N ? o : -1; };\n  // Convert startMin to booking-day offset (rounds down to hour)\n  const minToOffset = m => { const h = Math.floor(m / 60); return hourToOffset(h); };\n\n  // Assign consistent event-type colors\n  const EVT_COLORS = ['#4f8ef7','#7b5ea7','#4abf8a','#e0a85c','#e05c5c','#5bc4c4','#c47b5b','#9bb55b','#c45b9b','#5b7bc4'];\n  const evtColorMap = {};\n  let evtColorIdx = 0;\n  [...new Set(allBookings.map(b=>b.eventType))].sort().forEach(e => {\n    evtColorMap[e] = EVT_COLORS[evtColorIdx++ % EVT_COLORS.length];\n  });\n\n  const hm = m => {\n    const hh = Math.floor(m/60) % 24, mm = m % 60;\n    const ap = hh >= 12 ? 'pm' : 'am';\n    const h12 = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;\n    return `${h12}${mm ? ':' + String(mm).padStart(2,'0') : ''}${ap}`;\n  };\n\n  const rooms = [...ROOM_META].sort((a,b) => {\n    if (a.building !== b.building) return (+a.building) - (+b.building);\n    return a.name.localeCompare(b.name);\n  });\n\n  // For each room, build a list of \"lanes\" \u2014 stacked rows to handle overlapping bookings.\n  // Each booking gets placed into the first lane where it doesn't overlap existing entries.\n  // A booking occupies offsets [startOffset, endOffset) clamped to [0, N).\n  const roomLanes = {}; // roomKey -> array of lanes, each lane = array of {booking, startOff, endOff}\n\n  const getBookingOffsets = b => {\n    const durMin = b.endMin <= b.startMin ? (1440 - b.startMin + b.endMin) : (b.endMin - b.startMin);\n    const startOff = minToOffset(b.startMin);\n    if (startOff < 0) return null; // outside booking day window\n    const spanHours = Math.ceil(durMin / 60);\n    const endOff = Math.min(startOff + spanHours, N);\n    return { startOff, endOff };\n  };\n\n  rooms.forEach(r => { roomLanes[r.key] = []; });\n\n  dayBooks.forEach(b => {\n    if (!roomLanes[b.roomKey]) return;\n    const offs = getBookingOffsets(b);\n    if (!offs) return;\n    const { startOff, endOff } = offs;\n    // Find a lane with no overlap\n    let placed = false;\n    for (const lane of roomLanes[b.roomKey]) {\n      const overlaps = lane.some(e => startOff < e.endOff && endOff > e.startOff);\n      if (!overlaps) { lane.push({ booking: b, startOff, endOff }); placed = true; break; }\n    }\n    if (!placed) roomLanes[b.roomKey].push([{ booking: b, startOff, endOff }]);\n  });\n\n  const COL_W = 62;\n  const ROOM_W = 120;\n\n  let html = `<table class=\"dv-table\" style=\"width:${ROOM_W + N * COL_W}px\">`;\n  html += '<thead><tr>';\n  html += `<th class=\"dv-room-th\">Room<\/th>`;\n  HOURS.forEach(h => { html += `<th style=\"width:${COL_W}px\">${HLBL(h)}<\/th>`; });\n  html += '<\/tr><\/thead><tbody>';\n\n  rooms.forEach(r => {\n    const lanes = roomLanes[r.key] || [];\n    const numLanes = lanes.length || 1;\n\n    lanes.forEach((lane, laneIdx) => {\n      html += '<tr>';\n      // Room label cell only on first lane, spans all lanes\n      if (laneIdx === 0) {\n        html += `<td class=\"dv-room-cell\" rowspan=\"${numLanes}\">${r.name}<br><span>${r.building}<\/span><\/td>`;\n      }\n\n      // Walk offsets, emitting colspan cells for bookings and single empty cells for gaps\n      let off = 0;\n      // Sort lane entries by startOff\n      const entries = [...lane].sort((a,b) => a.startOff - b.startOff);\n      for (const entry of entries) {\n        // Fill gap before this booking\n        if (entry.startOff > off) {\n          html += `<td colspan=\"${entry.startOff - off}\"><div class=\"dv-slot empty\"><\/div><\/td>`;\n        }\n        // Emit the booking cell\n        const span = entry.endOff - entry.startOff;\n        const b = entry.booking;\n        const color = evtColorMap[b.eventType] || '#4f8ef7';\n        const isClass = b.eventType.toLowerCase() === 'academic class';\n        const bookerName = (b.name || '').split(',')[0].trim();\n        const hasRealName = bookerName && bookerName.toLowerCase() !== '(none)';\n        const hasEventName = !!b.eventName;\n        const primaryLabel = hasEventName ? b.eventName : hasRealName ? `${bookerName} \\u00b7 ${b.eventType}` : b.eventType;\n        const secondaryLabel = isClass && hasEventName && hasRealName ? bookerName : '';\n        const tipTxt = [\n          hasEventName ? b.eventName : null,\n          `${(b.name||'(none)').replace(/'/g,'&#39;')}`,\n          `${hm(b.startMin)}\\u2013${hm(b.endMin)}`,\n          `${b.eventType} \\u00b7 ${b.status}`\n        ].filter(Boolean).join('<br>');\n        const subHtml = secondaryLabel ? `<span class=\"dv-slot-sub\">${secondaryLabel}<\/span>` : '';\n        html += `<td colspan=\"${span}\"><div class=\"dv-slot booked\" style=\"background:${color}55;border-left:3px solid ${color}\"\n          onmouseenter=\"tip(event,'${tipTxt.replace(/'/g,\"&#39;\")}')\" onmouseleave=\"untip()\">\n          <span class=\"dv-slot-label\">${primaryLabel}<\/span>${subHtml}\n        <\/div><\/td>`;\n        off = entry.endOff;\n      }\n      // Fill trailing gap\n      if (off < N) {\n        html += `<td colspan=\"${N - off}\"><div class=\"dv-slot empty\"><\/div><\/td>`;\n      }\n      html += '<\/tr>';\n    });\n\n    // If room has no bookings, emit a single empty row\n    if (numLanes === 0) {\n      html += `<tr><td class=\"dv-room-cell\">${r.name}<br><span>${r.building}<\/span><\/td>`;\n      html += `<td colspan=\"${N}\"><div class=\"dv-slot empty\"><\/div><\/td><\/tr>`;\n    }\n  });\n\n  html += '<\/tbody><\/table>';\n  document.getElementById('dv-wrap').innerHTML = html;\n}\n\n// =====================================================================\n// ROOMS TABLE \u2014 inline expand (replaces original renderRooms)\n// =====================================================================\nlet roomExpandedKey = null;\n\nfunction renderRooms() {\n  const b = filteredBookings;\n  const sv = document.getElementById('f-start').value;\n  const ev = document.getElementById('f-end').value;\n  const start = sv ? new Date(sv+'T00:00:00') : null;\n  const end   = ev ? new Date(ev+'T23:59:59') : null;\n  const days = (start && end) ? Math.max(1, Math.round((end-start)/86400000)+1) : 1;\n  const totalAvail = days * 21;\n\n  const stats = {};\n  ROOM_META.forEach(r => { stats[r.key] = {c:0, h:0, meta:r}; });\n  b.forEach(x => {\n    if (!stats[x.roomKey]) stats[x.roomKey] = {c:0, h:0, meta:x.meta};\n    stats[x.roomKey].c++;\n    stats[x.roomKey].h += x.durHours;\n  });\n\n  let data = Object.entries(stats)\n    .filter(([,v])=>v.c>0)\n    .map(([k,v])=>({\n      key:k, name:v.meta?.name||k, building:v.meta?.building||k.split('-')[0],\n      type:v.meta?.type||'\\u2014', monitoring:v.meta?.monitoring||'\\u2014',\n      bookings:v.c, hours:v.h, util:Math.min(100,v.h/totalAvail*100), meta:v.meta\n    }));\n\n  const q = (document.getElementById('rooms-search')?.value||'').toLowerCase();\n  if (q) data = data.filter(r =>\n    r.name.toLowerCase().includes(q) || r.building.includes(q) ||\n    r.type.toLowerCase().includes(q) || r.monitoring.toLowerCase().includes(q)\n  );\n\n  const { col, dir } = roomColSort;\n  const mult = dir === 'desc' ? -1 : 1;\n  data.sort((a, z) => {\n    const av = a[col], zv = z[col];\n    if (typeof av === 'string') return mult * av.localeCompare(zv);\n    return mult * (av - zv);\n  });\n\n  const sortSel = document.getElementById('rooms-sort');\n  if (col==='util'&&dir==='desc') sortSel.value='util-desc';\n  else if (col==='util'&&dir==='asc') sortSel.value='util-asc';\n  else if (col==='bookings'&&dir==='desc') sortSel.value='bookings-desc';\n  else if (col==='name'&&dir==='asc') sortSel.value='alpha';\n\n  const MON_CLR = {'Stereo':'#525c72','5.1 Surround':'#4f8ef7','7.1.2 Dolby Atmos':'#9b6ed7','7.1.4 Dolby Atmos':'#b87be0','9.1.6 Dolby Atmos':'#e05c5c'};\n  const STAT_CLR = {'Confirmed':'#4abf8a','Confirmed - Web':'#4f8ef7','Academic Confirmed':'#7b5ea7','Checked-In':'#e0a85c','Checked-Out':'#e05c5c','Late':'#e05c5c'};\n  const hm = m => {\n    const hh = Math.floor(m/60) % 24; const mm = m % 60;\n    const ap = hh >= 12 ? 'pm' : 'am';\n    const h12 = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;\n    return `${h12}${mm ? ':' + String(mm).padStart(2,'0') : ''}${ap}`;\n  };\n\n  let rows = '';\n  data.forEach(r => {\n    const caps = [];\n    if (r.meta?.live_room==='Yes')       caps.push(`<span class=\"pill\" style=\"border-color:#4abf8a;color:#4abf8a\">Live<\/span>`);\n    if (r.meta?.live_room==='Iso Booth') caps.push(`<span class=\"pill\" style=\"border-color:#4f8ef7;color:#4f8ef7\">Iso<\/span>`);\n    if (r.meta?.drums==='Yes')           caps.push(`<span class=\"pill\" style=\"border-color:#e0a85c;color:#e0a85c\">\\uD83E\\uDD41<\/span>`);\n    if (r.meta?.drums_students==='Yes')  caps.push(`<span class=\"pill\" style=\"border-color:#e0a85c;color:#e0a85c60\">Stu\\uD83E\\uDD41<\/span>`);\n    const uc = r.util>70?'#e05c5c':r.util>40?'#e0a85c':'#4abf8a';\n    const mc = MON_CLR[r.monitoring]||'#525c72';\n    const isExp = roomExpandedKey === r.key;\n\n    rows += `<tr class=\"room-row-clickable${isExp?' expanded':''}\" onclick=\"toggleRoomExpand('${r.key.replace(/'/g,\"&#39;\")}')\">\n      <td style=\"color:var(--text)\">${r.name}<\/td>\n      <td>${r.building}<\/td>\n      <td>${r.type}<\/td>\n      <td><span class=\"pill\" style=\"border-color:${mc};color:${mc};font-size:9px;\">${r.monitoring}<\/span><\/td>\n      <td>${r.bookings}<\/td>\n      <td>${r.hours.toFixed(1)}h<\/td>\n      <td><div class=\"util-meter\"><div class=\"util-bar\"><div class=\"util-fill\" style=\"width:${Math.min(100,r.util).toFixed(0)}%;background:${uc}\"><\/div><\/div><span style=\"font-size:10px;color:${uc};width:38px;\">${r.util.toFixed(1)}%<\/span><\/div><\/td>\n      <td>${caps.join(' ')}<\/td>\n    <\/tr>`;\n\n    if (isExp) {\n      const roomBooks = b.filter(x => x.roomKey === r.key)\n        .sort((a,z) => a.bookingDay - z.bookingDay || a.startMin - z.startMin);\n      let innerRows = roomBooks.map(bk => {\n        const sc = STAT_CLR[bk.status] || '#525c72';\n        return `<tr>\n          <td style=\"color:var(--text2)\">${bk.bookingDayStr}<\/td>\n          <td>${hm(bk.startMin)}\\u2013${hm(bk.endMin)}<\/td>\n          <td>${bk.durHours.toFixed(1)}h<\/td>\n          <td style=\"color:var(--text)\">${bk.name || '(none)'}<\/td>\n          <td>${bk.eventType}<\/td>\n          <td><span style=\"color:${sc}\">${bk.status}<\/span><\/td>\n        <\/tr>`;\n      }).join('');\n      rows += `<tr class=\"room-expand-tr\">\n        <td colspan=\"8\">\n          <div class=\"room-expand-inner\">\n            <table class=\"data-table\">\n              <thead><tr>\n                <th>Date<\/th><th>Time<\/th><th>Dur<\/th><th>Booker<\/th><th>Event Type<\/th><th>Status<\/th>\n              <\/tr><\/thead>\n              <tbody>${innerRows}<\/tbody>\n            <\/table>\n          <\/div>\n        <\/td>\n      <\/tr>`;\n    }\n  });\n\n  document.getElementById('rooms-tbody').innerHTML = rows;\n}\n\nfunction toggleRoomExpand(key) {\n  roomExpandedKey = (roomExpandedKey === key) ? null : key;\n  renderRooms();\n}\n\nwindow.addEventListener('resize',()=>{ if(currentTab==='trends') renderTrends(); });\n<\/script>\n<\/body>\n<\/html>\n";
+const ROOM_META = [{"name": "Studio A", "key": "136-B01", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Studio B", "key": "136-B14", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Suite B06", "key": "136-B06", "type": "Production Suite", "live_room": "Iso Booth", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Suite B04", "key": "136-B04", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Studio E", "key": "136-B09", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Studio F", "key": "136-B07", "type": "Studio", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Suite A76", "key": "150-A76.2", "type": "Production Suite", "live_room": "Yes", "drums": "Yes", "drums_students": "Yes", "monitoring": "Stereo", "building": "150"}, {"name": "Studio 116", "key": "150-116", "type": "Studio", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "150"}, {"name": "Studio A92", "key": "150-A92", "type": "Studio", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "5.1 Surround", "building": "150"}, {"name": "Studio BPC", "key": "150-156", "type": "Studio", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "150"}, {"name": "Tech Lab B05", "key": "136-B05", "type": "Edit Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Suite A", "key": "150-A68", "type": "Production Suite", "live_room": "Yes", "drums": "No", "drums_students": "No", "monitoring": "5.1 Surround", "building": "150"}, {"name": "Suite B", "key": "150-A66", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "7.1.2 Dolby Atmos", "building": "150"}, {"name": "Suite C", "key": "150-A64", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "7.1.2 Dolby Atmos", "building": "150"}, {"name": "Suite T", "key": "150-A65", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "7.1.4 Dolby Atmos", "building": "150"}, {"name": "Studio 165", "key": "150-165", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "150"}, {"name": "Studio 168", "key": "150-168", "type": "Studio", "live_room": "Yes", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "150"}, {"name": "Project Band", "key": "1108-302", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "Yes", "monitoring": "Stereo", "building": "1108"}, {"name": "Studio 1", "key": "160-A144", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "No", "monitoring": "Stereo", "building": "160"}, {"name": "Studio 2", "key": "160-A132", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "No", "monitoring": "Stereo", "building": "160"}, {"name": "Studio 3", "key": "160-B247", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "No", "monitoring": "Stereo", "building": "160"}, {"name": "Dub Stage", "key": "160-B242", "type": "Studio", "live_room": "Iso Booth", "drums": "No", "drums_students": "No", "monitoring": "9.1.6 Dolby Atmos", "building": "160"}, {"name": "Mastering", "key": "160-B256", "type": "Studio", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "7.1.4 Dolby Atmos", "building": "160"}, {"name": "Suite 1", "key": "160-B231", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "5.1 Surround", "building": "160"}, {"name": "Suite 2", "key": "160-B234", "type": "Production Suite", "live_room": "Iso Booth", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "160"}, {"name": "Suite 3", "key": "160-B236", "type": "Production Suite", "live_room": "Iso Booth", "drums": "Yes", "drums_students": "Yes", "monitoring": "Stereo", "building": "160"}, {"name": "Suite 4", "key": "160-B238", "type": "Production Suite", "live_room": "Iso Booth", "drums": "Yes", "drums_students": "Yes", "monitoring": "Stereo", "building": "160"}, {"name": "Tech Booth B53.1", "key": "150-B53.1", "type": "Production Suite", "live_room": "Iso Booth", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "150"}, {"name": "Tech Class A60", "key": "150-A60", "type": "Other", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "150"}, {"name": "Suite 307 + LR", "key": "921-307", "type": "Production Suite", "live_room": "Yes", "drums": "Yes", "drums_students": "Yes", "monitoring": "Stereo", "building": "921"}, {"name": "Suite 309", "key": "921-309", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "921"}];
+const PREBAKED_ROWS = null;
+const PREBAKED_LABEL = null;
+
+// =====================================================================
+// ROOM LOOKUP
+// =====================================================================
+const roomLookup = {};
+ROOM_META.forEach(r => {
+  // key is like "136-B01", building is "136", room portion is "B01"
+  const dashIdx = r.key.indexOf('-');
+  const bld = r.key.slice(0, dashIdx);
+  const rm = r.key.slice(dashIdx + 1);
+  roomLookup[bld + '-' + rm] = r;
+});
+
+// =====================================================================
+// STATE
+// =====================================================================
+let allBookings = [];
+let filteredBookings = [];
+let datasets = [];
+let currentTab = 'overview';
+let semesterMonday = null; // global for current primary dataset
+
+// =====================================================================
+// DST-AWARE DISPLAY NOTE
+// CSV times are already stored as local EST/EDT by WhenIWork.
+// We preserve them as-is and label the tool as displaying EST/EDT.
+// =====================================================================
+function getESTLabel(dateObj) {
+  // Returns "EST" or "EDT" based on whether date is in daylight saving
+  const year = dateObj.getFullYear();
+  const edtStart = nthSunday(year, 2, 2); // March 2nd Sunday
+  const edtEnd = nthSunday(year, 10, 1);  // November 1st Sunday
+  return (dateObj >= edtStart && dateObj < edtEnd) ? 'EDT' : 'EST';
+}
+function nthSunday(year, month, n) {
+  let count = 0;
+  for (let d = new Date(year, month, 1); d.getMonth() === month; d.setDate(d.getDate()+1)) {
+    if (d.getDay() === 0 && ++count === n) return new Date(d);
+  }
+  return null;
+}
+
+// =====================================================================
+// PARSE HELPERS
+// =====================================================================
+function parseDay(s) {
+  const [m,d,y] = s.split('/').map(Number);
+  return new Date(2000+y, m-1, d);
+}
+function parseTimeMin(s) {
+  const m = s.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!m) return null;
+  let h = +m[1], min = +m[2];
+  const ap = m[3].toUpperCase();
+  if (ap === 'PM' && h !== 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  return h * 60 + min;
+}
+function getMondayOf(d) {
+  const dow = d.getDay(); // 0=Sun
+  const diff = dow === 0 ? -6 : 1 - dow;
+  const m = new Date(d);
+  m.setDate(m.getDate() + diff);
+  return m;
+}
+function dateStr(d) { return d.toISOString().slice(0,10); }
+
+// =====================================================================
+// PROCESS BOOKINGS
+// =====================================================================
+function processBookings(csvRows) {
+  // Find min date to establish semester week 1
+  let minDate = null;
+  csvRows.forEach(r => {
+    if (!r.Day) return;
+    const d = parseDay(r.Day);
+    if (!minDate || d < minDate) minDate = d;
+  });
+  const semMon = getMondayOf(minDate);
+
+  const bookings = [];
+  csvRows.forEach(r => {
+    if (!r.Day || !r['Start Time'] || !r['End Time']) return;
+    const startMin = parseTimeMin(r['Start Time']);
+    const endMin = parseTimeMin(r['End Time']);
+    if (startMin === null || endMin === null) return;
+
+    // Booking day logic: times 0–359 min (12am–5:59am) belong to previous calendar day
+    const calDay = parseDay(r.Day);
+    const bookingDay = new Date(calDay);
+    if (startMin < 360) bookingDay.setDate(bookingDay.getDate() - 1);
+
+    // Duration: handle cross-midnight
+    let durMin = (endMin <= startMin) ? (1440 - startMin + endMin) : (endMin - startMin);
+
+    const weekNum = Math.floor((bookingDay - semMon) / (7 * 86400000)) + 1;
+    const building = (r.Building || '').trim();
+    const room = (r.Room || '').trim();
+    const roomKey = building + '-' + room;
+
+    bookings.push({
+      day: r.Day,
+      calDay,
+      bookingDay,
+      bookingDayStr: dateStr(bookingDay),
+      startMin,
+      endMin,
+      durHours: durMin / 60,
+      startHour: Math.floor(startMin / 60),
+      building,
+      room,
+      roomKey,
+      status: (r.Status || '').trim(),
+      eventType: (r['Event Type'] || '').trim(),
+      eventName: (r['Event Name'] || '').trim(),
+      name: (r.Name || '').trim(),
+      meta: roomLookup[roomKey] || null,
+      weekNum,
+      dow: bookingDay.getDay(),
+    });
+  });
+
+  return { bookings, semMon };
+}
+
+// =====================================================================
+// INIT
+// =====================================================================
+window.addEventListener('DOMContentLoaded', () => {
+  if (PREBAKED_ROWS) {
+    // Prebaked data present — rows are compact format [day, startMin, endMin, building, room, status, eventType, name, eventName]
+    const { bookings, semMon } = processCompactRows(PREBAKED_ROWS);
+    semesterMonday = semMon;
+    allBookings = bookings;
+    datasets = [{ label: PREBAKED_LABEL, bookings, semMon, dateRange: getDateRange(bookings) }];
+    initDataView();
+  } else {
+    // No data — show upload prompt
+    document.getElementById('no-data').style.display = 'flex';
+    document.getElementById('data-view').style.display = 'none';
+  }
+
+  // Tab clicks always wired up
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => { if (allBookings.length) switchTab(t.dataset.tab); });
+  });
+});
+
+// Process compact rows [day, startMin, endMin, building, room, status, eventType, name, eventName]
+// Used by prebaked/offline data — bypasses string time parsing.
+function processCompactRows(rows) {
+  let minDate = null;
+  rows.forEach(r => {
+    if (!r[0]) return;
+    const d = parseDay(r[0]);
+    if (!minDate || d < minDate) minDate = d;
+  });
+  const semMon = getMondayOf(minDate);
+
+  const bookings = rows.map(r => {
+    const startMin = r[1], endMin = r[2];
+    const calDay = parseDay(r[0]);
+    const bookingDay = new Date(calDay);
+    if (startMin < 360) bookingDay.setDate(bookingDay.getDate() - 1);
+    const durMin = (endMin <= startMin) ? (1440 - startMin + endMin) : (endMin - startMin);
+    const building = (r[3]||'').trim();
+    const room     = (r[4]||'').trim();
+    const roomKey  = building + '-' + room;
+    const weekNum  = Math.floor((bookingDay - semMon) / (7 * 86400000)) + 1;
+    return {
+      day: r[0], calDay, bookingDay, bookingDayStr: dateStr(bookingDay),
+      startMin, endMin, durHours: durMin / 60, startHour: Math.floor(startMin / 60),
+      building, room, roomKey,
+      status: r[5], eventType: r[6], name: r[7], eventName: (r[8]||''),
+      meta: roomLookup[roomKey] || null,
+      weekNum, dow: bookingDay.getDay()
+    };
+  });
+
+  return { bookings, semMon };
+}
+
+function initDataView() {
+  document.getElementById('no-data').style.display = 'none';
+  document.getElementById('data-view').style.display = 'flex';
+  buildFilterUI();
+  applyFilters();
+  updateBadge();
+}
+
+function getDateRange(bks) {
+  if (!bks.length) return null;
+  let min = bks[0].bookingDay, max = bks[0].bookingDay;
+  bks.forEach(b => { if (b.bookingDay < min) min = b.bookingDay; if (b.bookingDay > max) max = b.bookingDay; });
+  return { min, max };
+}
+
+// =====================================================================
+// FILTER UI
+// =====================================================================
+// Returns a display-level building key, splitting Bldg 160 into A/B levels by room prefix.
+function dvBuilding(b) {
+  if (b.building === '160') return b.room.startsWith('A') ? '160A' : '160B';
+  return b.building;
+}
+
+function buildFilterUI() {
+  const BLDG_NAMES = {'136':'Bldg 136','150':'Bldg 150','160A':'160 \u00b7 A Level','160B':'160 \u00b7 B Level','1108':'Bldg 1108','921':'Bldg 921'};
+  const buildings = [...new Set(allBookings.map(b=>dvBuilding(b)))].sort((a,b) => parseInt(a)-parseInt(b) || a.localeCompare(b));
+  document.getElementById('f-buildings').innerHTML = buildings.map(bk =>
+    `<div class="filter-row">
+      <input type="checkbox" id="fb-${bk}" value="${bk}" checked onchange="applyFilters()">
+      <label for="fb-${bk}">${BLDG_NAMES[bk]||bk}</label>
+      <span class="filter-count">${allBookings.filter(x=>dvBuilding(x)===bk).length}</span>
+      <span class="solo-btn" onclick="soloFilter('f-buildings','${bk}')">solo</span>
+    </div>`
+  ).join('');
+
+  const types = [...new Set(ROOM_META.map(r=>r.type))].sort();
+  document.getElementById('f-room-types').innerHTML = types.map(t =>
+    `<div class="filter-row">
+      <input type="checkbox" id="frt-${esc(t)}" value="${t}" checked onchange="applyFilters()">
+      <label for="frt-${esc(t)}">${t}</label>
+      <span class="solo-btn" onclick="soloFilter('f-room-types','${t}')">solo</span>
+    </div>`
+  ).join('');
+
+  const statuses = [...new Set(allBookings.map(b=>b.status))].sort();
+  document.getElementById('f-statuses').innerHTML = statuses.map(s =>
+    `<div class="filter-row">
+      <input type="checkbox" id="fs-${esc(s)}" value="${s}" checked onchange="applyFilters()">
+      <label for="fs-${esc(s)}">${s}</label>
+      <span class="filter-count">${allBookings.filter(x=>x.status===s).length}</span>
+      <span class="solo-btn" onclick="soloFilter('f-statuses','${s}')">solo</span>
+    </div>`
+  ).join('');
+
+  const evtTypes = [...new Set(allBookings.map(b=>b.eventType))].sort();
+  document.getElementById('f-event-types').innerHTML = evtTypes.map(e =>
+    `<div class="filter-row">
+      <input type="checkbox" id="fe-${esc(e)}" value="${e}" checked onchange="applyFilters()">
+      <label for="fe-${esc(e)}">${e}</label>
+      <span class="filter-count">${allBookings.filter(x=>x.eventType===e).length}</span>
+      <span class="solo-btn" onclick="soloFilter('f-event-types','${e}')">solo</span>
+    </div>`
+  ).join('');
+
+  const dr = getDateRange(allBookings);
+  if (dr) {
+    document.getElementById('f-start').value = dateStr(dr.min);
+    document.getElementById('f-end').value = dateStr(dr.max);
+  }
+
+  // Semester selector
+  const sel = document.getElementById('f-semester');
+  sel.innerHTML = '<option value="">— Select Period —</option>';
+  datasets.forEach((ds,i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = ds.label;
+    sel.appendChild(o);
+  });
+}
+
+function soloFilter(groupId, value) {
+  const checkboxes = document.querySelectorAll(`#${groupId} input[type=checkbox]`);
+  // If already soloed (only this one checked), restore all
+  const checked = [...checkboxes].filter(c=>c.checked);
+  if (checked.length === 1 && checked[0].value === value) {
+    checkboxes.forEach(c => c.checked = true);
+  } else {
+    checkboxes.forEach(c => { c.checked = (c.value === value); });
+  }
+  applyFilters();
+}
+
+function esc(s) { return s.replace(/[^a-zA-Z0-9]/g,'_'); }
+
+function getChecked(containerId) {
+  return [...document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)].map(c=>c.value);
+}
+
+function filterEvtList() {
+  const q = document.getElementById('evt-search').value.toLowerCase();
+  document.querySelectorAll('#f-event-types .filter-row').forEach(row => {
+    const lbl = row.querySelector('label')?.textContent.toLowerCase() || '';
+    row.style.display = lbl.includes(q) ? '' : 'none';
+  });
+}
+
+function applyFilters() {
+  const sv = document.getElementById('f-start').value;
+  const ev = document.getElementById('f-end').value;
+  const start = sv ? new Date(sv+'T00:00:00') : null;
+  const end   = ev ? new Date(ev+'T23:59:59') : null;
+  const blds  = getChecked('f-buildings');
+  const types = getChecked('f-room-types');
+  const stats = getChecked('f-statuses');
+  const evts  = getChecked('f-event-types');
+
+  const cLive  = document.getElementById('cap-live').checked;
+  const cIso   = document.getElementById('cap-iso').checked;
+  const cDrum  = document.getElementById('cap-drums').checked;
+  const cDstu  = document.getElementById('cap-drums-stu').checked;
+  const cSurr  = document.getElementById('cap-surround').checked;
+  const cAtm   = document.getElementById('cap-atmos').checked;
+
+  filteredBookings = allBookings.filter(b => {
+    if (start && b.bookingDay < start) return false;
+    if (end   && b.bookingDay > end)   return false;
+    if (!blds.includes(dvBuilding(b))) return false;
+    if (!stats.includes(b.status))     return false;
+    if (!evts.includes(b.eventType))   return false;
+    if (b.meta && !types.includes(b.meta.type)) return false;
+    if (cLive && (!b.meta || b.meta.live_room === 'No')) return false;
+    if (cIso  && (!b.meta || b.meta.live_room !== 'Iso Booth')) return false;
+    if (cDrum && (!b.meta || b.meta.drums !== 'Yes')) return false;
+    if (cDstu && (!b.meta || b.meta.drums_students !== 'Yes')) return false;
+    if (cSurr && (!b.meta || (!b.meta.monitoring.includes('Surround') && !b.meta.monitoring.includes('Atmos')))) return false;
+    if (cAtm  && (!b.meta || !b.meta.monitoring.includes('Atmos'))) return false;
+    return true;
+  });
+
+  document.getElementById('booking-count').textContent = filteredBookings.length.toLocaleString() + ' bookings';
+  renderCurrentTab();
+}
+
+function applySemesterPreset() {
+  const v = document.getElementById('f-semester').value;
+  if (v === '') return;
+  const ds = datasets[+v];
+  if (ds?.dateRange) {
+    document.getElementById('f-start').value = dateStr(ds.dateRange.min);
+    document.getElementById('f-end').value   = dateStr(ds.dateRange.max);
+    applyFilters();
+  }
+}
+
+function clearFilters() {
+  document.querySelectorAll('.sidebar input[type=checkbox]').forEach(c => c.checked = true);
+  ['cap-live','cap-iso','cap-drums','cap-drums-stu','cap-surround','cap-atmos'].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  const dr = getDateRange(allBookings);
+  if (dr) {
+    document.getElementById('f-start').value = dateStr(dr.min);
+    document.getElementById('f-end').value   = dateStr(dr.max);
+  }
+  applyFilters();
+}
+
+// =====================================================================
+// TABS
+// =====================================================================
+function switchTab(name) {
+  currentTab = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-'+name));
+  renderCurrentTab();
+}
+function renderCurrentTab() {
+  if (currentTab === 'overview') renderOverview();
+  else if (currentTab === 'heatmaps') { renderHM1(); renderHM2(); renderHM3(); }
+  else if (currentTab === 'rooms') renderRooms();
+  else if (currentTab === 'trends') renderTrends();
+  else if (currentTab === 'dayview') renderDayView();
+  else if (currentTab === 'history') renderHistory();
+}
+
+// =====================================================================
+// OVERVIEW
+// =====================================================================
+function renderOverview() {
+  const b = filteredBookings;
+  const totalH = b.reduce((s,x)=>s+x.durHours, 0);
+  const uRooms = new Set(b.map(x=>x.roomKey)).size;
+  const uDays  = new Set(b.map(x=>x.bookingDayStr)).size;
+  const after  = b.filter(x=>x.startHour<6).length;
+  const byDay  = {};
+  b.forEach(x => { byDay[x.bookingDayStr] = (byDay[x.bookingDayStr]||0)+1; });
+  const peakDay = Object.entries(byDay).sort((a,z)=>z[1]-a[1])[0];
+
+  document.getElementById('stat-grid').innerHTML = [
+    ['#4f8ef7', b.length.toLocaleString(), 'Total Bookings', uDays+' booking days'],
+    ['#4abf8a', totalH.toFixed(0)+'h',     'Total Hours',    uDays>0?(totalH/uDays).toFixed(1)+'h avg/day':''],
+    ['#7b5ea7', uRooms,                    'Active Rooms',   'of '+ROOM_META.length+' tracked'],
+    ['#e0a85c', uDays>0?(b.length/uDays).toFixed(1):0, 'Avg Daily', 'bookings/day'],
+    ['#e05c5c', after,                     'After Midnight', '12am–6am bookings'],
+    peakDay ? ['#4f8ef7', peakDay[1], 'Peak Day', peakDay[0]] : null,
+  ].filter(Boolean).map(([color,val,lbl,sub]) =>
+    `<div class="stat-card"><div class="accent-bar" style="background:${color}"></div><div class="val">${val}</div><div class="lbl">${lbl}</div><div class="sub">${sub}</div></div>`
+  ).join('');
+
+  // Charts
+  const byRoom = countBy(b, x=>x.roomKey);
+  const topRooms = topN(byRoom, 10);
+  renderBarChart('chart-top-rooms', topRooms.map(([k,v])=>({label:roomLookup[k]?.name||k, val:v, color:'#4f8ef7'})), true);
+
+  const byEvt = countBy(b, x=>x.eventType);
+  renderBarChart('chart-event-types', topN(byEvt,10).map(([k,v])=>({label:k,val:v,color:'#7b5ea7'})), true);
+
+  const BLDG = {'136':'Bldg 136','150':'Bldg 150','160':'Bldg 160','1108':'1108','921':'921'};
+  const byBld = countBy(b, x=>x.building);
+  renderBarChart('chart-buildings', topN(byBld,10).map(([k,v])=>({label:BLDG[k]||k,val:v,color:'#4abf8a'})), true);
+
+  const STAT_CLR = {'Confirmed':'#4abf8a','Confirmed - Web':'#4f8ef7','Academic Confirmed':'#7b5ea7','Checked-In':'#e0a85c','Checked-Out':'#e05c5c','Late':'#e05c5c'};
+  const byStat = countBy(b, x=>x.status);
+  renderBarChart('chart-statuses', topN(byStat,10).map(([k,v])=>({label:k,val:v,color:STAT_CLR[k]||'#525c72'})), true);
+}
+
+function countBy(arr, fn) {
+  const m = {};
+  arr.forEach(x => { const k=fn(x); m[k]=(m[k]||0)+1; });
+  return m;
+}
+function topN(obj, n) {
+  return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,n);
+}
+
+function renderBarChart(id, data, showPct=false) {
+  const max = data.reduce((m,d)=>Math.max(m,d.val),1);
+  const total = showPct ? data.reduce((s,d)=>s+d.val,0) : 0;
+  document.getElementById(id).innerHTML = data.map(d => {
+    const pct = showPct && total>0 ? ` <span style="color:var(--text3)">${(d.val/total*100).toFixed(1)}%</span>` : '';
+    return `<div class="bar-row">
+      <div class="bar-label" title="${d.label}">${d.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(d.val/max*100)}%;background:${d.color}"></div></div>
+      <div class="bar-val" style="width:70px;">${d.val}${pct}</div>
+    </div>`;
+  }).join('');
+}
+
+// =====================================================================
+// HEATMAP COLOR
+// =====================================================================
+function heatColor(t) {
+  // 0=dark, 1=bright
+  const stops = [
+    [0,   [26,30,40]],
+    [0.2, [30,60,120]],
+    [0.5, [40,120,180]],
+    [0.75,[74,191,138]],
+    [1.0, [224,168,92]],
+  ];
+  if (t <= 0) return `rgb(${stops[0][1].join(',')})`;
+  for (let i=1;i<stops.length;i++) {
+    if (t <= stops[i][0]) {
+      const lo=stops[i-1], hi=stops[i];
+      const f=(t-lo[0])/(hi[0]-lo[0]);
+      return `rgb(${[0,1,2].map(j=>Math.round(lo[1][j]+f*(hi[1][j]-lo[1][j]))).join(',')})`;
+    }
+  }
+  return `rgb(224,168,92)`;
+}
+
+function makeLegend(containerId) {
+  let html = '<span style="margin-right:4px;">Low</span>';
+  for (let i=0;i<=12;i++) html += `<div class="hm-legend-swatch" style="background:${heatColor(i/12)}"></div>`;
+  html += '<span style="margin-left:4px;">High</span>';
+  document.getElementById(containerId).innerHTML = html;
+  document.getElementById(containerId).className = 'hm-legend';
+}
+
+// =====================================================================
+// HM1: DOW × Hour
+// =====================================================================
+function renderHM1() {
+  const metric = document.getElementById('hm1-metric').value;
+  const b = filteredBookings;
+  const HOURS = [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5];
+  const DAYS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const HLBL  = h => h===0?'12a':h<12?h+'a':h===12?'12p':(h-12)+'p';
+
+  // matrix[dow][hour] = {count, hours}
+  const mat = Array.from({length:7},()=>Object.fromEntries(HOURS.map(h=>[h,{c:0,h:0}])));
+  b.forEach(x => {
+    const cell = mat[x.dow]?.[x.startHour];
+    if (cell) { cell.c++; cell.h += x.durHours; }
+  });
+
+  let maxV = 0;
+  DAYS.forEach((_,d)=>HOURS.forEach(h=>{ const v=metric==='count'?mat[d][h].c:mat[d][h].h; if(v>maxV)maxV=v; }));
+
+  let html = '<table class="heatmap-table"><thead><tr><th></th>';
+  HOURS.forEach(h => html += `<th>${HLBL(h)}</th>`);
+  html += '</tr></thead><tbody>';
+  DAYS.forEach((day,d) => {
+    html += `<tr><td class="hm-row-label">${day}</td>`;
+    HOURS.forEach(h => {
+      const cell = mat[d][h];
+      const val = metric==='count' ? cell.c : cell.h;
+      const tip = `${day} ${HLBL(h)}<br>${cell.c} bookings / ${cell.h.toFixed(1)}h`;
+      html += `<td><div class="hm-cell" style="background:${heatColor(maxV?val/maxV:0)}" onmouseenter="tip(event,'${tip}')" onmouseleave="untip()"></div></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('hm1').innerHTML = html;
+  makeLegend('hm1-legend');
+}
+
+// =====================================================================
+// HM2: Room × Week
+// =====================================================================
+function renderHM2() {
+  const metric = document.getElementById('hm2-metric').value;
+  const b = filteredBookings;
+  const AVAIL_PER_WEEK = 21 * 7; // 147h
+
+  const weeks = [...new Set(b.map(x=>x.weekNum))].sort((a,z)=>a-z);
+  const roomKeys = [...new Set(b.map(x=>x.roomKey))].sort();
+
+  const mat = {};
+  roomKeys.forEach(k => { mat[k] = {}; weeks.forEach(w => mat[k][w]={c:0,h:0}); });
+  b.forEach(x => {
+    const cell = mat[x.roomKey]?.[x.weekNum];
+    if (cell) { cell.c++; cell.h += x.durHours; }
+  });
+
+  let maxV = 0;
+  roomKeys.forEach(k => weeks.forEach(w => {
+    const v = metric==='count'?mat[k][w].c : metric==='hours'?mat[k][w].h : mat[k][w].h/AVAIL_PER_WEEK*100;
+    if(v>maxV) maxV=v;
+  }));
+
+  let html = '<table class="week-hm-table"><thead><tr><th style="text-align:right;padding-right:7px;"></th>';
+  weeks.forEach(w => html += `<th>W${w}</th>`);
+  html += '</tr></thead><tbody>';
+  roomKeys.forEach(k => {
+    const name = roomLookup[k]?.name || k;
+    html += `<tr><td class="week-hm-room-label">${name}</td>`;
+    weeks.forEach(w => {
+      const cell = mat[k][w];
+      const val = metric==='count'?cell.c : metric==='hours'?cell.h : cell.h/AVAIL_PER_WEEK*100;
+      const tip = `${name} / Week ${w}<br>${cell.c} bookings<br>${cell.h.toFixed(1)}h<br>${(cell.h/AVAIL_PER_WEEK*100).toFixed(1)}% util`;
+      html += `<td><div class="week-hm-cell" style="background:${heatColor(maxV?val/maxV:0)}" onmouseenter="tip(event,'${tip}')" onmouseleave="untip()"></div></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('hm2').innerHTML = html;
+  makeLegend('hm2-legend');
+}
+
+// =====================================================================
+// HM3: After-Midnight × Building × DOW
+// =====================================================================
+function renderHM3() {
+  // After-midnight = starts between 12:00am (0) and 5:59am (359 min), exclusive of exactly midnight end
+  // startHour 0–5 AND startMin > 0 (not exactly midnight) AND startMin < 360
+  const b = filteredBookings.filter(x => x.startMin > 0 && x.startMin < 360);
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const BLDG = {'136':'Bldg 136','150':'Bldg 150','160A':'160 \u00b7 A Level','160B':'160 \u00b7 B Level','1108':'1108','921':'Bldg 921'};
+  const blds = [...new Set(b.map(x=>dvBuilding(x)))].sort((a,b) => parseInt(a)-parseInt(b) || a.localeCompare(b));
+  if (!b.length) { document.getElementById('hm3').innerHTML='<div style="color:var(--text3);font-size:11px;padding:8px;">No after-midnight bookings in filtered range.</div>'; return; }
+
+  const mat = {};
+  blds.forEach(bld => { mat[bld] = Array(7).fill(0); });
+  b.forEach(x => { const bk = dvBuilding(x); if(mat[bk]) mat[bk][x.dow]++; });
+  let maxV = 0;
+  blds.forEach(bld => mat[bld].forEach(v => { if(v>maxV)maxV=v; }));
+
+  let html = '<table class="heatmap-table"><thead><tr><th></th>';
+  DAYS.forEach(d => html += `<th>${d}</th>`);
+  html += '</tr></thead><tbody>';
+  blds.forEach(bld => {
+    html += `<tr><td class="hm-row-label" style="width:80px;">${BLDG[bld]||bld}</td>`;
+    DAYS.forEach((_,d) => {
+      const v = mat[bld][d];
+      const tip = `${BLDG[bld]||bld} / ${DAYS[d]}<br>${v} after-midnight bookings`;
+      html += `<td><div class="hm-cell" style="background:${heatColor(maxV?v/maxV:0)};width:32px;height:24px;" onmouseenter="tip(event,'${tip}')" onmouseleave="untip()"></div></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('hm3').innerHTML = html;
+}
+
+// =====================================================================
+// ROOMS TABLE
+// =====================================================================
+let roomColSort = { col: 'util', dir: 'desc' };
+
+function roomSortCol(col) {
+  if (roomColSort.col === col) {
+    roomColSort.dir = roomColSort.dir === 'desc' ? 'asc' : 'desc';
+  } else {
+    roomColSort.col = col;
+    roomColSort.dir = ['bookings','hours','util'].includes(col) ? 'desc' : 'asc';
+  }
+  // Update header classes
+  document.querySelectorAll('#tab-rooms .data-table th').forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+    const ind = th.querySelector('.sort-ind');
+    if (ind && ind.dataset.col === col) th.classList.add('sort-'+roomColSort.dir);
+  });
+  renderRooms();
+}
+
+// TRENDS (SVG charts)
+// =====================================================================
+function renderTrends() {
+  const b = filteredBookings;
+  const byWeek = {}, byWeekH = {};
+  b.forEach(x => { byWeek[x.weekNum]=(byWeek[x.weekNum]||0)+1; byWeekH[x.weekNum]=(byWeekH[x.weekNum]||0)+x.durHours; });
+  const weeks = Object.keys(byWeek).map(Number).sort((a,z)=>a-z);
+
+  svgBar('chart-weekly', weeks.map(w=>`W${w}`), weeks.map(w=>byWeek[w]), '#4f8ef7', 160);
+
+  // Room type stacked
+  const TYPES = [...new Set(ROOM_META.map(r=>r.type))];
+  const TYPE_CLR = {'Studio':'#4f8ef7','Production Suite':'#7b5ea7','Edit Suite':'#4abf8a','Other':'#525c72'};
+  const typeW = {};
+  TYPES.forEach(t => { typeW[t]={}; weeks.forEach(w=>typeW[t][w]=0); });
+  b.forEach(x => { if(x.meta&&typeW[x.meta.type]) typeW[x.meta.type][x.weekNum]=(typeW[x.meta.type][x.weekNum]||0)+x.durHours; });
+  svgStacked('chart-type-trend', weeks.map(w=>`W${w}`), TYPES.map(t=>({label:t,color:TYPE_CLR[t]||'#525c72',vals:weeks.map(w=>typeW[t][w]||0)})), 150);
+
+  // Top 5 event types stacked
+  const evtCounts = countBy(b,x=>x.eventType);
+  const top5evts = topN(evtCounts,5).map(([k])=>k);
+  const EVT_CLR = ['#4f8ef7','#7b5ea7','#4abf8a','#e0a85c','#e05c5c'];
+  const evtW = {};
+  top5evts.forEach(e=>{evtW[e]={};weeks.forEach(w=>evtW[e][w]=0);});
+  b.forEach(x=>{ if(evtW[x.eventType]) evtW[x.eventType][x.weekNum]=(evtW[x.eventType][x.weekNum]||0)+1; });
+  svgStacked('chart-evt-trend', weeks.map(w=>`W${w}`), top5evts.map((e,i)=>({label:e.length>16?e.slice(0,14)+'…':e,color:EVT_CLR[i],vals:weeks.map(w=>evtW[e][w]||0)})), 150);
+
+  // Daily dist
+  const HOURS = [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5];
+  const HLBL  = h => h===0?'12a':h<12?h+'a':h===12?'12p':(h-12)+'p';
+  const dist = {};
+  HOURS.forEach(h=>dist[h]=0);
+  b.forEach(x=>{ if(dist[x.startHour]!==undefined) dist[x.startHour]++; });
+  svgBar('chart-daily-dist', HOURS.map(HLBL), HOURS.map(h=>dist[h]), '#4abf8a', 130);
+}
+
+function svgBar(id, labels, vals, color, h) {
+  const el = document.getElementById(id);
+  if (!el||!labels.length) return;
+  const W = el.offsetWidth||600, H=h;
+  const PAD={t:8,r:8,b:24,l:36};
+  const cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;
+  const maxV=Math.max(...vals,1);
+  const bw=Math.max(2,cW/labels.length-2);
+  let s=`<svg width="${W}" height="${H}" style="overflow:visible">`;
+  for(let i=0;i<=4;i++){
+    const y=PAD.t+cH*(1-i/4);
+    s+=`<line x1="${PAD.l}" y1="${y}" x2="${PAD.l+cW}" y2="${y}" stroke="#252a38" stroke-width="1"/>`;
+    s+=`<text x="${PAD.l-3}" y="${y+3}" text-anchor="end" fill="#525c72" font-size="9" font-family="IBM Plex Mono,monospace">${Math.round(maxV*i/4)}</text>`;
+  }
+  labels.forEach((lbl,i)=>{
+    const x=PAD.l+i*(cW/labels.length)+(cW/labels.length-bw)/2;
+    const bh=(vals[i]/maxV)*cH;
+    const tipTxt=`${lbl}: ${vals[i]}`;
+    s+=`<rect x="${x.toFixed(1)}" y="${(PAD.t+cH-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh,0).toFixed(1)}" fill="${color}" rx="2" opacity="0.85"
+      onmouseenter="tip(event,'${tipTxt.replace(/'/g,'&#39;')}')" onmouseleave="untip()" style="cursor:default"/>`;
+    if(labels.length<=24) s+=`<text x="${(x+bw/2).toFixed(1)}" y="${(PAD.t+cH+14).toFixed(1)}" text-anchor="middle" fill="#525c72" font-size="9" font-family="IBM Plex Mono,monospace">${lbl}</text>`;
+  });
+  s+='</svg>';
+  el.innerHTML=s;
+}
+
+function svgStacked(id, labels, series, h) {
+  const el = document.getElementById(id);
+  if(!el||!labels.length) return;
+  const W=el.offsetWidth||600, H=h;
+  const PAD={t:8,r:120,b:24,l:36};
+  const cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;
+  let maxV=0;
+  labels.forEach((_,i)=>{ const s=series.reduce((a,sr)=>a+sr.vals[i],0); if(s>maxV)maxV=s; });
+  maxV=Math.max(maxV,1);
+  const bw=Math.max(2,cW/labels.length-2);
+  let s=`<svg width="${W}" height="${H}" style="overflow:visible">`;
+  for(let i=0;i<=4;i++) s+=`<line x1="${PAD.l}" y1="${PAD.t+cH*(1-i/4)}" x2="${PAD.l+cW}" y2="${PAD.t+cH*(1-i/4)}" stroke="#252a38" stroke-width="1"/>`;
+  labels.forEach((lbl,i)=>{
+    let cum=0;
+    series.forEach(sr=>{
+      const bh=(sr.vals[i]/maxV)*cH;
+      const x=PAD.l+i*(cW/labels.length)+(cW/labels.length-bw)/2;
+      const tipTxt=`${lbl} / ${sr.label}: ${sr.vals[i]}`;
+      s+=`<rect x="${x.toFixed(1)}" y="${(PAD.t+cH-cum-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh,0).toFixed(1)}" fill="${sr.color}" rx="1" opacity="0.85"
+        onmouseenter="tip(event,'${tipTxt.replace(/'/g,'&#39;')}')" onmouseleave="untip()" style="cursor:default"/>`;
+      cum+=bh;
+    });
+    if(labels.length<=24) s+=`<text x="${(PAD.l+i*(cW/labels.length)+bw/2).toFixed(1)}" y="${(PAD.t+cH+14).toFixed(1)}" text-anchor="middle" fill="#525c72" font-size="9" font-family="IBM Plex Mono,monospace">${lbl}</text>`;
+  });
+  series.forEach((sr,i)=>{
+    s+=`<rect x="${W-PAD.r+8}" y="${PAD.t+i*16}" width="10" height="10" fill="${sr.color}" rx="2"/>`;
+    s+=`<text x="${W-PAD.r+22}" y="${PAD.t+i*16+9}" fill="#8892aa" font-size="9" font-family="IBM Plex Mono,monospace">${sr.label}</text>`;
+  });
+  s+='</svg>';
+  el.innerHTML=s;
+}
+
+// =====================================================================
+// HISTORY
+// =====================================================================
+function renderHistory() {
+  const list = document.getElementById('history-datasets');
+  list.innerHTML = '<table class="data-table"><thead><tr><th>Dataset</th><th>Date Range</th><th>Bookings</th><th>Rooms</th><th>Hours</th></tr></thead><tbody>'+
+    datasets.map((ds,i)=>{
+      const dr=ds.dateRange;
+      const h=ds.bookings.reduce((s,b)=>s+b.durHours,0);
+      const r=new Set(ds.bookings.map(b=>b.roomKey)).size;
+      return `<tr><td style="color:var(--text)">${ds.label}</td><td>${dr?dateStr(dr.min)+' → '+dateStr(dr.max):'—'}</td><td>${ds.bookings.length.toLocaleString()}</td><td>${r}</td><td>${h.toFixed(0)}h</td></tr>`;
+    }).join('')+'</tbody></table>';
+
+  const card=document.getElementById('compare-card');
+  const content=document.getElementById('compare-content');
+  if(datasets.length<2){card.style.display='none';return;}
+  card.style.display='block';
+  const metrics=datasets.map(ds=>({
+    label:ds.label,
+    total:ds.bookings.length,
+    hours:ds.bookings.reduce((s,b)=>s+b.durHours,0),
+    rooms:new Set(ds.bookings.map(b=>b.roomKey)).size,
+    after:ds.bookings.filter(b=>b.startHour<6).length,
+  }));
+  const mxT=Math.max(...metrics.map(m=>m.total));
+  const mxH=Math.max(...metrics.map(m=>m.hours));
+  const CLR=['#4f8ef7','#7b5ea7','#4abf8a','#e0a85c'];
+  content.innerHTML=`<div class="two-col" style="margin-top:8px;">
+    <div><div class="section-sub" style="margin-bottom:8px;">Total Bookings</div>${metrics.map((m,i)=>`<div class="bar-row"><div class="bar-label" title="${m.label}">${m.label}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(m.total/mxT*100)}%;background:${CLR[i%4]}"></div></div><div class="bar-val">${m.total.toLocaleString()}</div></div>`).join('')}</div>
+    <div><div class="section-sub" style="margin-bottom:8px;">Total Hours</div>${metrics.map((m,i)=>`<div class="bar-row"><div class="bar-label" title="${m.label}">${m.label}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(m.hours/mxH*100)}%;background:${CLR[i%4]}"></div></div><div class="bar-val">${m.hours.toFixed(0)}h</div></div>`).join('')}</div>
+  </div>`;
+}
+
+// =====================================================================
+// FILE UPLOAD
+// =====================================================================
+function parseCSV(text) {
+  const lines = text.split('\n');
+  const headers = parseCSVLine(lines[0]).map(s=>s.trim().replace(/^"|"$/g,''));
+  const rows = [];
+  for(let i=1;i<lines.length;i++){
+    const line=lines[i].trim();
+    if(!line) continue;
+    const vals=parseCSVLine(line);
+    if(vals.length<headers.length-2) continue;
+    const row={};
+    headers.forEach((h,j)=>row[h]=(vals[j]||'').trim());
+    rows.push(row);
+  }
+  return rows;
+}
+function parseCSVLine(line){
+  const r=[]; let cur='', inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===','&&!inQ){r.push(cur);cur='';}
+    else cur+=c;
+  }
+  r.push(cur); return r;
+}
+
+// =====================================================================
+// DEDUPLICATION
+// =====================================================================
+// Dedup key: bookingDayStr + building + room + startMin + endMin + status
+// This uniquely identifies a real booking slot regardless of which export it came from.
+function dedupKey(b) {
+  return `${b.bookingDayStr}|${b.building}|${b.room}|${b.startMin}|${b.endMin}|${b.status}`;
+}
+
+// Deduplicate a flat array of bookings, returning {deduped, removed} counts.
+function deduplicateBookings(bookings) {
+  const seen = new Set();
+  const deduped = [];
+  let removed = 0;
+  for (const b of bookings) {
+    const k = dedupKey(b);
+    if (seen.has(k)) { removed++; continue; }
+    seen.add(k);
+    deduped.push(b);
+  }
+  return { deduped, removed };
+}
+
+// Merge incoming bookings into existing allBookings, deduplicating across both.
+// Returns { merged, removed }.
+function mergeIntoAll(incoming) {
+  const combined = [...allBookings, ...incoming];
+  const { deduped, removed } = deduplicateBookings(combined);
+  return { merged: deduped, removed };
+}
+
+// Compare two date ranges for exact equality (same min and max day string).
+function dateRangesEqual(dr1, dr2) {
+  if (!dr1 || !dr2) return false;
+  return dateStr(dr1.min) === dateStr(dr2.min) && dateStr(dr1.max) === dateStr(dr2.max);
+}
+
+// Show a brief non-blocking notice in the header area.
+function showNotice(msg, color='var(--accent4)') {
+  let el = document.getElementById('merge-notice');
+  if (!el) {
+    el = document.createElement('span');
+    el.id = 'merge-notice';
+    el.style.cssText = 'font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid;transition:opacity 0.5s;';
+    document.getElementById('booking-count').insertAdjacentElement('afterend', el);
+  }
+  el.textContent = msg;
+  el.style.color = color;
+  el.style.borderColor = color;
+  el.style.opacity = '1';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.style.opacity = '0'; }, 4000);
+}
+
+function handleCSVUpload(event) {
+  const file = event.target.files[0]; if (!file) return;
+  // Reset input so the same file can be re-uploaded if needed
+  event.target.value = '';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const rows = parseCSV(e.target.result);
+      const { bookings: incoming, semMon } = processBookings(rows);
+      const incomingDR = getDateRange(incoming);
+      const incomingLabel = incomingDR ? `${dateStr(incomingDR.min)} → ${dateStr(incomingDR.max)}` : 'Uploaded';
+      const firstLoad = allBookings.length === 0;
+
+      // Find if any existing dataset has an identical date range
+      const matchIdx = datasets.findIndex(ds => dateRangesEqual(ds.dateRange, incomingDR));
+
+      if (matchIdx !== -1) {
+        // Exact date range match — replace that dataset, dedup whole pool
+        const { merged, removed } = mergeIntoAll(incoming);
+        allBookings = merged;
+        datasets[matchIdx] = { label: incomingLabel, bookings: incoming, semMon, dateRange: incomingDR };
+        // Re-derive allBookings from all datasets (clean rebuild)
+        const { deduped } = deduplicateBookings(datasets.flatMap(ds => ds.bookings));
+        allBookings = deduped;
+        const msg = removed > 0
+          ? `Replaced existing dataset, removed ${removed} duplicate booking${removed===1?'':'s'}`
+          : 'Replaced existing dataset — no duplicates found';
+        showNotice(msg);
+      } else {
+        // Different date range — merge and dedup across everything
+        const { merged, removed } = mergeIntoAll(incoming);
+        allBookings = merged;
+        datasets.push({ label: incomingLabel, bookings: incoming, semMon, dateRange: incomingDR });
+        const msg = removed > 0
+          ? `Merged ${incoming.length.toLocaleString()} bookings, removed ${removed} duplicate${removed===1?'':'s'}`
+          : `Merged ${incoming.length.toLocaleString()} bookings — no duplicates found`;
+        showNotice(msg);
+      }
+
+      if (firstLoad) {
+        initDataView();
+      } else {
+        buildFilterUI();
+        applyFilters();
+        updateBadge();
+      }
+    } catch(err) { alert('CSV parse error: ' + err.message); }
+  };
+  reader.readAsText(file, 'windows-1252');
+}
+
+function handleSnapshotLoad(event) {
+  const file = event.target.files[0]; if (!file) return;
+  event.target.value = '';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const snap = JSON.parse(e.target.result);
+      if (snap.version !== 1 || !snap.datasets) throw new Error('Invalid snapshot format');
+
+      let totalIncoming = 0;
+      snap.datasets.forEach(ds => {
+        // Reconstruct booking objects from compact snapshot rows
+        const snapDR = ds.dateRange
+          ? { min: new Date(ds.dateRange.min+'T00:00:00'), max: new Date(ds.dateRange.max+'T00:00:00') }
+          : null;
+        const semMon = snapDR ? getMondayOf(snapDR.min) : null;
+
+        const bookings = ds.rows.map(r => {
+          const startMin = r[1], endMin = r[2];
+          const calDay = parseDay(r[0]);
+          const bookingDay = new Date(calDay);
+          if (startMin < 360) bookingDay.setDate(bookingDay.getDate() - 1);
+          const durMin = (endMin <= startMin) ? (1440 - startMin + endMin) : (endMin - startMin);
+          const building = (r[3]||'').trim();
+          const room = (r[4]||'').trim();
+          const roomKey = building + '-' + room;
+          const wSemMon = semMon || getMondayOf(bookingDay);
+          const weekNum = Math.floor((bookingDay - wSemMon) / (7 * 86400000)) + 1;
+          return {
+            day: r[0], calDay, bookingDay, bookingDayStr: dateStr(bookingDay),
+            startMin, endMin, durHours: durMin/60, startHour: Math.floor(startMin/60),
+            building, room, roomKey, status: r[5], eventType: r[6], name: r[7], eventName: (r[8]||''),
+            meta: roomLookup[roomKey] || null, weekNum, dow: bookingDay.getDay()
+          };
+        });
+
+        const dateRange = snapDR || getDateRange(bookings);
+        totalIncoming += bookings.length;
+
+        // Always merge+dedup for snapshots — treat as historical record
+        const matchIdx = datasets.findIndex(d => dateRangesEqual(d.dateRange, dateRange));
+        if (matchIdx !== -1) {
+          // Merge into existing dataset for that range
+          const combined = [...datasets[matchIdx].bookings, ...bookings];
+          const { deduped } = deduplicateBookings(combined);
+          datasets[matchIdx] = { ...datasets[matchIdx], bookings: deduped };
+        } else {
+          datasets.push({ label: ds.label, bookings, dateRange });
+        }
+      });
+
+      // Rebuild allBookings from all datasets, fully deduped
+      const { deduped, removed } = deduplicateBookings(datasets.flatMap(d => d.bookings));
+      const firstLoad = allBookings.length === 0;
+      allBookings = deduped;
+
+      if (firstLoad) {
+        initDataView();
+      } else {
+        buildFilterUI();
+        applyFilters();
+        updateBadge();
+      }
+
+      const msg = removed > 0
+        ? `Loaded snapshot (${snap.datasets.length} dataset${snap.datasets.length===1?'':'s'}), removed ${removed} duplicate${removed===1?'':'s'}`
+        : `Loaded snapshot (${snap.datasets.length} dataset${snap.datasets.length===1?'':'s'}) — no duplicates found`;
+      showNotice(msg);
+    } catch(err) { alert('Snapshot load error: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+// =====================================================================
+// EXPORT SNAPSHOT
+// =====================================================================
+function exportSnapshot() {
+  const snap={
+    version:1,
+    exportedAt:new Date().toISOString(),
+    datasets:datasets.map(ds=>({
+      label:ds.label,
+      dateRange:ds.dateRange?{min:dateStr(ds.dateRange.min),max:dateStr(ds.dateRange.max)}:null,
+      rows:ds.bookings.map(b=>[b.day,b.startMin,b.endMin,b.building,b.room,b.status,b.eventType,b.name,b.eventName||''])
+    }))
+  };
+  const blob=new Blob([JSON.stringify(snap)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`studiopulse-snapshot-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function openOfflineModal() {
+  if (!allBookings.length) { showNotice('No data loaded yet.', 'var(--accent3)'); return; }
+  document.getElementById('offline-modal').classList.remove('hidden');
+}
+
+function doExportOfflineHTML() {
+  document.getElementById('offline-modal').classList.add('hidden');
+  const scope = document.querySelector('input[name=offline-scope]:checked').value;
+
+  const booksToEmbed = scope === 'filtered' ? filteredBookings : allBookings;
+  const compactRows = booksToEmbed.map(b =>
+    [b.day, b.startMin, b.endMin, b.building, b.room, b.status, b.eventType, b.name, b.eventName||'']
+  );
+
+  const dr = getDateRange(booksToEmbed);
+  const label = dr
+    ? (scope === 'filtered'
+        ? `Filtered: ${dateStr(dr.min)} → ${dateStr(dr.max)}`
+        : `All datasets: ${dateStr(dr.min)} → ${dateStr(dr.max)}`)
+    : 'Exported';
+
+  // Reconstruct the HTML from the stored template halves, splicing in live data.
+  // This is reliable because _HTML_BEFORE/_HTML_AFTER are the original source,
+  // not the runtime DOM — so there are no duplicate const declarations.
+  const dataBlock =
+    `const ROOM_META = ${JSON.stringify(ROOM_META)};\n` +
+    `const PREBAKED_ROWS = ${JSON.stringify(compactRows)};\n` +
+    `const PREBAKED_LABEL = ${JSON.stringify(label)};`;
+
+  const offlineHTML = _HTML_BEFORE + dataBlock + _HTML_AFTER;
+
+  const blob = new Blob([offlineHTML], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const dateTag = new Date().toISOString().slice(0, 10);
+  a.download = `studiopulse-offline-${scope}-${dateTag}.html`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showNotice(`Offline HTML generated (${compactRows.length.toLocaleString()} bookings)`);
+}
+
+function tip(e,html){
+  const t=document.getElementById('tooltip');
+  t.innerHTML=html; t.classList.add('show');
+  t.style.left=(e.clientX+12)+'px'; t.style.top=(e.clientY-8)+'px';
+}
+function untip(){ document.getElementById('tooltip').classList.remove('show'); }
+document.addEventListener('mousemove',e=>{
+  const t=document.getElementById('tooltip');
+  if(t.classList.contains('show')){ t.style.left=(e.clientX+12)+'px'; t.style.top=(e.clientY-8)+'px'; }
+});
+
+// =====================================================================
+// MISC
+// =====================================================================
+function updateBadge(){
+  const dr=getDateRange(allBookings);
+  if(dr){
+    document.getElementById('data-badge').textContent=dateStr(dr.min)+' → '+dateStr(dr.max);
+    document.getElementById('data-badge').className='badge active';
+  }
+}
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  const f=e.dataTransfer.files[0];
+  if(f) handleCSVUpload({target:{files:[f]}});
+}
+function handleDragOver(e){e.preventDefault();document.getElementById('upload-zone').classList.add('drag');}
+function handleDragLeave(){document.getElementById('upload-zone').classList.remove('drag');}
+
+// =====================================================================
+// DAY VIEW
+// =====================================================================
+let dvCurrentDay = null;
+
+function dvAllDays() {
+  return [...new Set(allBookings.map(b => b.bookingDayStr))].sort();
+}
+
+function dvInit() {
+  const days = dvAllDays();
+  if (!days.length) return;
+  if (!dvCurrentDay || !days.includes(dvCurrentDay)) dvCurrentDay = days[days.length - 1];
+}
+
+function dvStep(dir) {
+  const days = dvAllDays();
+  if (!days.length) return;
+  const idx = days.indexOf(dvCurrentDay);
+  const next = idx + dir;
+  if (next < 0 || next >= days.length) return;
+  dvCurrentDay = days[next];
+  renderDayView();
+}
+
+function dvSetDate(val) {
+  const days = dvAllDays();
+  if (days.includes(val)) {
+    dvCurrentDay = val;
+  } else {
+    let closest = days[0];
+    for (const d of days) { if (d <= val) closest = d; else break; }
+    dvCurrentDay = closest;
+  }
+  renderDayView();
+}
+
+function renderDayView() {
+  dvInit();
+  const days = dvAllDays();
+  if (!days.length || !dvCurrentDay) {
+    document.getElementById('dv-wrap').innerHTML = '<div class="dv-no-data">No data loaded.</div>';
+    return;
+  }
+
+  const lbl = document.getElementById('dv-date-lbl');
+  const inp = document.getElementById('dv-date-input');
+  const d = new Date(dvCurrentDay + 'T12:00:00');
+  const DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  lbl.textContent = DOW[d.getDay()] + ', ' + dvCurrentDay;
+  inp.value = dvCurrentDay;
+
+  // Day view respects sidebar filters (building, status, event type, etc.)
+  const dayBooks = filteredBookings.filter(b => b.bookingDayStr === dvCurrentDay);
+
+  const totalH = dayBooks.reduce((s,b)=>s+b.durHours,0);
+  const activeRooms = new Set(dayBooks.map(b=>b.roomKey)).size;
+  document.getElementById('dv-stats').innerHTML =
+    `<span><strong>${dayBooks.length}</strong> bookings</span>` +
+    `<span><strong>${totalH.toFixed(1)}h</strong> booked</span>` +
+    `<span><strong>${activeRooms}</strong> rooms active</span>`;
+
+  // Booking day hours: 9am–5am (21 hours). Map to 0-based offsets for easy math.
+  // offset 0 = 9am, offset 12 = 9pm, offset 20 = 5am
+  const HOURS = [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5];
+  const N = HOURS.length; // 21
+  const HLBL = h => h===0?'12am':h<12?h+'am':h===12?'12pm':(h-12)+'pm';
+
+  // Convert a clock-hour to a booking-day offset (9am = 0)
+  const hourToOffset = h => { const o = h < 9 ? h + 24 - 9 : h - 9; return o < N ? o : -1; };
+  // Convert startMin to booking-day offset (rounds down to hour)
+  const minToOffset = m => { const h = Math.floor(m / 60); return hourToOffset(h); };
+
+  // Assign consistent event-type colors
+  const EVT_COLORS = ['#4f8ef7','#7b5ea7','#4abf8a','#e0a85c','#e05c5c','#5bc4c4','#c47b5b','#9bb55b','#c45b9b','#5b7bc4'];
+  const evtColorMap = {};
+  let evtColorIdx = 0;
+  [...new Set(allBookings.map(b=>b.eventType))].sort().forEach(e => {
+    evtColorMap[e] = EVT_COLORS[evtColorIdx++ % EVT_COLORS.length];
+  });
+
+  const hm = m => {
+    const hh = Math.floor(m/60) % 24, mm = m % 60;
+    const ap = hh >= 12 ? 'pm' : 'am';
+    const h12 = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;
+    return `${h12}${mm ? ':' + String(mm).padStart(2,'0') : ''}${ap}`;
+  };
+
+  const rooms = [...ROOM_META].sort((a,b) => {
+    if (a.building !== b.building) return (+a.building) - (+b.building);
+    return a.name.localeCompare(b.name);
+  });
+
+  // For each room, build a list of "lanes" — stacked rows to handle overlapping bookings.
+  // Each booking gets placed into the first lane where it doesn't overlap existing entries.
+  // A booking occupies offsets [startOffset, endOffset) clamped to [0, N).
+  const roomLanes = {}; // roomKey -> array of lanes, each lane = array of {booking, startOff, endOff}
+
+  const getBookingOffsets = b => {
+    const durMin = b.endMin <= b.startMin ? (1440 - b.startMin + b.endMin) : (b.endMin - b.startMin);
+    const startOff = minToOffset(b.startMin);
+    if (startOff < 0) return null; // outside booking day window
+    const spanHours = Math.ceil(durMin / 60);
+    const endOff = Math.min(startOff + spanHours, N);
+    return { startOff, endOff };
+  };
+
+  rooms.forEach(r => { roomLanes[r.key] = []; });
+
+  dayBooks.forEach(b => {
+    if (!roomLanes[b.roomKey]) return;
+    const offs = getBookingOffsets(b);
+    if (!offs) return;
+    const { startOff, endOff } = offs;
+    // Find a lane with no overlap
+    let placed = false;
+    for (const lane of roomLanes[b.roomKey]) {
+      const overlaps = lane.some(e => startOff < e.endOff && endOff > e.startOff);
+      if (!overlaps) { lane.push({ booking: b, startOff, endOff }); placed = true; break; }
+    }
+    if (!placed) roomLanes[b.roomKey].push([{ booking: b, startOff, endOff }]);
+  });
+
+  const COL_W = 62;
+  const ROOM_W = 120;
+
+  let html = `<table class="dv-table" style="width:${ROOM_W + N * COL_W}px">`;
+  html += '<thead><tr>';
+  html += `<th class="dv-room-th">Room</th>`;
+  HOURS.forEach(h => { html += `<th style="width:${COL_W}px">${HLBL(h)}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  rooms.forEach(r => {
+    const lanes = roomLanes[r.key] || [];
+    const numLanes = lanes.length;
+    if (numLanes === 0) return;
+
+    lanes.forEach((lane, laneIdx) => {
+      const isLastLane = laneIdx === numLanes - 1;
+      html += `<tr${isLastLane ? '' : ' class="dv-lane-cont"'}>`;
+      // Room label cell only on first lane, spans all lanes
+      if (laneIdx === 0) {
+        html += `<td class="dv-room-cell" rowspan="${numLanes}">${r.name}<br><span>${r.building}</span></td>`;
+      }
+
+      // Walk offsets, emitting colspan cells for bookings and single empty cells for gaps
+      let off = 0;
+      // Sort lane entries by startOff
+      const entries = [...lane].sort((a,b) => a.startOff - b.startOff);
+      for (const entry of entries) {
+        // Fill gap before this booking
+        if (entry.startOff > off) {
+          html += `<td colspan="${entry.startOff - off}"><div class="dv-slot empty"></div></td>`;
+        }
+        // Emit the booking cell
+        const span = entry.endOff - entry.startOff;
+        const b = entry.booking;
+        const color = evtColorMap[b.eventType] || '#4f8ef7';
+        const isClass = b.eventType.toLowerCase() === 'academic class';
+        const bookerName = (b.name || '').split(',')[0].trim();
+        const hasRealName = bookerName && bookerName.toLowerCase() !== '(none)';
+        const hasEventName = !!b.eventName;
+        // Primary: Event Name if present (for any event type); otherwise "Name \u00b7 EventType"
+        // or just EventType when no real booker name exists.
+        const primaryLabel = hasEventName ? b.eventName
+                           : hasRealName ? `${bookerName} \u00b7 ${b.eventType}`
+                           : b.eventType;
+        // Secondary only for class bookings (where primary is a course code and name adds context).
+        // For non-class bookings the Event Name already leads with the booker's name, so adding
+        // a secondary line would duplicate it.
+        const secondaryLabel = isClass && hasEventName && hasRealName ? bookerName : '';
+        const tipTxt = [
+          hasEventName ? b.eventName : null,
+          `${(b.name||'(none)').replace(/'/g,'&#39;')}`,
+          `${hm(b.startMin)}\u2013${hm(b.endMin)}`,
+          `${b.eventType} \u00b7 ${b.status}`
+        ].filter(Boolean).join('<br>');
+        const subHtml = secondaryLabel ? `<span class="dv-slot-sub">${secondaryLabel}</span>` : '';
+        html += `<td colspan="${span}"><div class="dv-slot booked" style="background:${color}55;border-left:3px solid ${color}"
+          onmouseenter="tip(event,'${tipTxt.replace(/'/g,"&#39;")}')" onmouseleave="untip()">
+          <span class="dv-slot-label">${primaryLabel}</span>${subHtml}
+        </div></td>`;
+        off = entry.endOff;
+      }
+      // Fill trailing gap
+      if (off < N) {
+        html += `<td colspan="${N - off}"><div class="dv-slot empty"></div></td>`;
+      }
+      html += '</tr>';
+    });
+
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('dv-wrap').innerHTML = html;
+}
+
+// =====================================================================
+// ROOMS TABLE — inline expand (replaces original renderRooms)
+// =====================================================================
+let roomExpandedKey = null;
+
+function renderRooms() {
+  const b = filteredBookings;
+  const sv = document.getElementById('f-start').value;
+  const ev = document.getElementById('f-end').value;
+  const start = sv ? new Date(sv+'T00:00:00') : null;
+  const end   = ev ? new Date(ev+'T23:59:59') : null;
+  const days = (start && end) ? Math.max(1, Math.round((end-start)/86400000)+1) : 1;
+  const totalAvail = days * 21;
+
+  const stats = {};
+  ROOM_META.forEach(r => { stats[r.key] = {c:0, h:0, meta:r}; });
+  b.forEach(x => {
+    if (!stats[x.roomKey]) stats[x.roomKey] = {c:0, h:0, meta:x.meta};
+    stats[x.roomKey].c++;
+    stats[x.roomKey].h += x.durHours;
+  });
+
+  let data = Object.entries(stats)
+    .filter(([,v])=>v.c>0)
+    .map(([k,v])=>({
+      key:k, name:v.meta?.name||k, building:v.meta?.building||k.split('-')[0],
+      type:v.meta?.type||'\u2014', monitoring:v.meta?.monitoring||'\u2014',
+      bookings:v.c, hours:v.h, util:Math.min(100,v.h/totalAvail*100), meta:v.meta
+    }));
+
+  const q = (document.getElementById('rooms-search')?.value||'').toLowerCase();
+  if (q) data = data.filter(r =>
+    r.name.toLowerCase().includes(q) || r.building.includes(q) ||
+    r.type.toLowerCase().includes(q) || r.monitoring.toLowerCase().includes(q)
+  );
+
+  const { col, dir } = roomColSort;
+  const mult = dir === 'desc' ? -1 : 1;
+  data.sort((a, z) => {
+    const av = a[col], zv = z[col];
+    if (typeof av === 'string') return mult * av.localeCompare(zv);
+    return mult * (av - zv);
+  });
+
+  const sortSel = document.getElementById('rooms-sort');
+  if (col==='util'&&dir==='desc') sortSel.value='util-desc';
+  else if (col==='util'&&dir==='asc') sortSel.value='util-asc';
+  else if (col==='bookings'&&dir==='desc') sortSel.value='bookings-desc';
+  else if (col==='name'&&dir==='asc') sortSel.value='alpha';
+
+  const MON_CLR = {'Stereo':'#525c72','5.1 Surround':'#4f8ef7','7.1.2 Dolby Atmos':'#9b6ed7','7.1.4 Dolby Atmos':'#b87be0','9.1.6 Dolby Atmos':'#e05c5c'};
+  const STAT_CLR = {'Confirmed':'#4abf8a','Confirmed - Web':'#4f8ef7','Academic Confirmed':'#7b5ea7','Checked-In':'#e0a85c','Checked-Out':'#e05c5c','Late':'#e05c5c'};
+  const hm = m => {
+    const hh = Math.floor(m/60) % 24; const mm = m % 60;
+    const ap = hh >= 12 ? 'pm' : 'am';
+    const h12 = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;
+    return `${h12}${mm ? ':' + String(mm).padStart(2,'0') : ''}${ap}`;
+  };
+
+  let rows = '';
+  data.forEach(r => {
+    const caps = [];
+    if (r.meta?.live_room==='Yes')       caps.push(`<span class="pill" style="border-color:#4abf8a;color:#4abf8a">Live</span>`);
+    if (r.meta?.live_room==='Iso Booth') caps.push(`<span class="pill" style="border-color:#4f8ef7;color:#4f8ef7">Iso</span>`);
+    if (r.meta?.drums==='Yes')           caps.push(`<span class="pill" style="border-color:#e0a85c;color:#e0a85c">\uD83E\uDD41</span>`);
+    if (r.meta?.drums_students==='Yes')  caps.push(`<span class="pill" style="border-color:#e0a85c;color:#e0a85c60">Stu\uD83E\uDD41</span>`);
+    const uc = r.util>70?'#e05c5c':r.util>40?'#e0a85c':'#4abf8a';
+    const mc = MON_CLR[r.monitoring]||'#525c72';
+    const isExp = roomExpandedKey === r.key;
+
+    rows += `<tr class="room-row-clickable${isExp?' expanded':''}" onclick="toggleRoomExpand('${r.key.replace(/'/g,"&#39;")}')">
+      <td style="color:var(--text)">${r.name}</td>
+      <td>${r.building}</td>
+      <td>${r.type}</td>
+      <td><span class="pill" style="border-color:${mc};color:${mc};font-size:9px;">${r.monitoring}</span></td>
+      <td>${r.bookings}</td>
+      <td>${r.hours.toFixed(1)}h</td>
+      <td><div class="util-meter"><div class="util-bar"><div class="util-fill" style="width:${Math.min(100,r.util).toFixed(0)}%;background:${uc}"></div></div><span style="font-size:10px;color:${uc};width:38px;">${r.util.toFixed(1)}%</span></div></td>
+      <td>${caps.join(' ')}</td>
+    </tr>`;
+
+    if (isExp) {
+      const roomBooks = b.filter(x => x.roomKey === r.key)
+        .sort((a,z) => a.bookingDay - z.bookingDay || a.startMin - z.startMin);
+      let innerRows = roomBooks.map(bk => {
+        const sc = STAT_CLR[bk.status] || '#525c72';
+        return `<tr>
+          <td style="color:var(--text2)">${bk.bookingDayStr}</td>
+          <td>${hm(bk.startMin)}\u2013${hm(bk.endMin)}</td>
+          <td>${bk.durHours.toFixed(1)}h</td>
+          <td style="color:var(--text)">${bk.name || '(none)'}</td>
+          <td>${bk.eventType}</td>
+          <td><span style="color:${sc}">${bk.status}</span></td>
+        </tr>`;
+      }).join('');
+      rows += `<tr class="room-expand-tr">
+        <td colspan="8">
+          <div class="room-expand-inner">
+            <table class="data-table">
+              <thead><tr>
+                <th>Date</th><th>Time</th><th>Dur</th><th>Booker</th><th>Event Type</th><th>Status</th>
+              </tr></thead>
+              <tbody>${innerRows}</tbody>
+            </table>
+          </div>
+        </td>
+      </tr>`;
+    }
+  });
+
+  document.getElementById('rooms-tbody').innerHTML = rows;
+}
+
+function toggleRoomExpand(key) {
+  roomExpandedKey = (roomExpandedKey === key) ? null : key;
+  renderRooms();
+}
+
+
+// =====================================================================
+// THEME TOGGLE
+// =====================================================================
+function toggleTheme() {
+  var root = document.documentElement;
+  var isLight = root.getAttribute("data-theme") === "light";
+  var next = isLight ? "dark" : "light";
+  if (next === "dark") root.removeAttribute("data-theme");
+  else root.setAttribute("data-theme", "light");
+  var btn = document.getElementById("theme-toggle");
+  if (btn) btn.textContent = next === "light" ? "Dark" : "Light";
+  try { localStorage.setItem("sp-theme", next); } catch(e) {}
+}
+(function(){
+  try {
+    var saved = localStorage.getItem("sp-theme");
+    if (saved === "dark") {
+      document.documentElement.removeAttribute("data-theme");
+      document.addEventListener("DOMContentLoaded", function(){
+        var btn = document.getElementById("theme-toggle");
+        if (btn) btn.textContent = "Light";
+      });
+    }
+    // default is light (data-theme="light" on <html>); button already says "Dark"
+  } catch(e) {}
+})();
+
+window.addEventListener('resize',()=>{ if(currentTab==='trends') renderTrends(); });
+</script>
+</body>
+</html>
