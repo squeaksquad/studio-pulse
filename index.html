@@ -1949,7 +1949,53 @@ async function pushToGitHub() {
       `const PREBAKED_ROWS = ${JSON.stringify(compactRows)};\n` +
       `const PREBAKED_LABEL = ${JSON.stringify(label)};`;
 
-    const offlineHTML = _HTML_BEFORE + dataBlock + _HTML_AFTER;
+    let offlineHTML = _HTML_BEFORE + dataBlock + _HTML_AFTER;
+
+    // Inject light mode CSS (missing from _HTML_BEFORE template)
+    const lightCSS = `
+[data-theme="light"] {
+  --bg: #f0f2f7; --surface: #ffffff; --surface2: #e8ebf2;
+  --border: #d0d5e3; --border2: #b8bfd4;
+  --text: #1a1e2e; --text2: #4a5270; --text3: #8892aa;
+}
+[data-theme="light"] .dv-slot-label { color: #1a1e2e; }
+[data-theme="light"] .dv-slot-sub { color: rgba(26,30,46,0.6); }
+[data-theme="light"] .dv-slot.booked:hover { filter: brightness(0.93); }
+.theme-toggle {
+  background: var(--surface2); border: 1px solid var(--border2); color: var(--text2);
+  font-family: var(--mono); font-size: 11px; padding: 5px 10px; border-radius: 4px;
+  cursor: pointer; transition: border-color 0.15s, color 0.15s; white-space: nowrap;
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+`;
+    offlineHTML = offlineHTML.replace('</style>\n</head>', lightCSS + '</style>\n</head>');
+
+    // Inject theme toggle button into the header
+    offlineHTML = offlineHTML.replace(
+      '\u2b07 Export Snapshot',
+      '<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">Dark<\/button>\n    <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="exportSnapshot()">\u2b07 Export Snapshot'
+    );
+
+    // Inject toggleTheme function
+    const toggleFn = `
+function toggleTheme() {
+  var root = document.documentElement;
+  var isLight = root.getAttribute('data-theme') === 'light';
+  var next = isLight ? 'dark' : 'light';
+  if (next === 'dark') root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme', 'light');
+  var btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = next === 'light' ? 'Dark' : 'Light';
+  try { localStorage.setItem('sp-theme', next); } catch(e) {}
+}
+window.addEventListener('DOMContentLoaded', function() {
+  try {
+    var saved = localStorage.getItem('sp-theme');
+    if (saved === 'dark') { document.documentElement.removeAttribute('data-theme'); var btn = document.getElementById('theme-toggle'); if (btn) btn.textContent = 'Light'; }
+  } catch(e) {}
+});
+`;
+    offlineHTML = offlineHTML.replace('<\/script>\n<\/body>\n<\/html>', toggleFn + '<\/script>\n<\/body>\n<\/html>');
 
     const res = await fetch(`${PULSE_WORKER_URL}/pulse/push`, {
       method: 'POST',
