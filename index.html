@@ -1895,6 +1895,95 @@ function toggleTheme() {
 })();
 
 window.addEventListener('resize',()=>{ if(currentTab==='trends') renderTrends(); });
+
+// =====================================================================
+// GITHUB PUSH (StudioPulse → Worker → studio-pulse-data repo)
+// =====================================================================
+
+const PULSE_WORKER_URL = 'https://studio-attendance.bryan-dimaio.workers.dev';
+
+function getPushConfig() {
+  const token = sessionStorage.getItem('pulse_push_token');
+  return token ? { token } : null;
+}
+
+function promptPushConfig() {
+  const token = prompt(
+    'Enter your StudioPulse push token\n' +
+    '(This is the PULSE_PUSH_TOKEN set in your Cloudflare Worker env vars.\n' +
+    'You will only be asked once per session.)'
+  );
+  if (!token) return null;
+  sessionStorage.setItem('pulse_push_token', token.trim());
+  return { token: token.trim() };
+}
+
+async function pushToGitHub() {
+  if (!allBookings.length) {
+    showNotice('No data loaded — nothing to push.', 'var(--accent3)');
+    return;
+  }
+
+  let config = getPushConfig();
+  if (!config) {
+    config = promptPushConfig();
+    if (!config) return;
+  }
+
+  const btn = document.getElementById('push-btn');
+  const origText = btn.textContent;
+  btn.textContent = '⬆ Pushing…';
+  btn.disabled = true;
+
+  try {
+    const compactRows = allBookings.map(b =>
+      [b.day, b.startMin, b.endMin, b.building, b.room, b.status, b.eventType, b.name, b.eventName || '']
+    );
+    const dr = getDateRange(allBookings);
+    const label = dr
+      ? `All datasets: ${dateStr(dr.min)} → ${dateStr(dr.max)}`
+      : 'Exported';
+
+    const dataBlock =
+      `const ROOM_META = ${JSON.stringify(ROOM_META)};\n` +
+      `const PREBAKED_ROWS = ${JSON.stringify(compactRows)};\n` +
+      `const PREBAKED_LABEL = ${JSON.stringify(label)};`;
+
+    const offlineHTML = _HTML_BEFORE + dataBlock + _HTML_AFTER;
+
+    const res = await fetch(`${PULSE_WORKER_URL}/pulse/push`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.token}`,
+        'Content-Type': 'text/html; charset=utf-8',
+      },
+      body: offlineHTML,
+    });
+
+    if (res.status === 401) {
+      sessionStorage.removeItem('pulse_push_token');
+      showNotice('Push failed: invalid token. Try again.', 'var(--accent3)');
+      return;
+    }
+
+    if (!res.ok) {
+      const err = await res.text();
+      showNotice(`Push failed: ${err}`, 'var(--accent3)');
+      return;
+    }
+
+    const result = await res.json();
+    showNotice(
+      `✓ Pushed to GitHub (${compactRows.length.toLocaleString()} bookings, ${result.date})`,
+      'var(--accent4)'
+    );
+  } catch(e) {
+    showNotice(`Push error: ${e.message}`, 'var(--accent3)');
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
+}
 </script>
 </body>
 </html>
