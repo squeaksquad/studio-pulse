@@ -1898,36 +1898,15 @@ window.addEventListener('resize',()=>{ if(currentTab==='trends') renderTrends();
 
 // =====================================================================
 // GITHUB PUSH (StudioPulse → Worker → studio-pulse-data repo)
+// Auth: Cloudflare Worker session cookie (set when signed into Worker dashboard)
 // =====================================================================
 
 const PULSE_WORKER_URL = 'https://studio-attendance.bryan-dimaio.workers.dev';
-
-function getPushConfig() {
-  const token = sessionStorage.getItem('pulse_push_token');
-  return token ? { token } : null;
-}
-
-function promptPushConfig() {
-  const token = prompt(
-    'Enter your StudioPulse push token\n' +
-    '(This is the PULSE_PUSH_TOKEN set in your Cloudflare Worker env vars.\n' +
-    'You will only be asked once per session.)'
-  );
-  if (!token) return null;
-  sessionStorage.setItem('pulse_push_token', token.trim());
-  return { token: token.trim() };
-}
 
 async function pushToGitHub() {
   if (!allBookings.length) {
     showNotice('No data loaded — nothing to push.', 'var(--accent3)');
     return;
-  }
-
-  let config = getPushConfig();
-  if (!config) {
-    config = promptPushConfig();
-    if (!config) return;
   }
 
   const btn = document.getElementById('push-btn');
@@ -1996,16 +1975,21 @@ async function pushToGitHub() {
 
     const res = await fetch(`${PULSE_WORKER_URL}/pulse/push`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${config.token}`,
-        'Content-Type': 'text/html; charset=utf-8',
-      },
+      credentials: 'include',  // sends Worker session cookie automatically
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
       body: offlineHTML,
     });
 
     if (res.status === 401) {
-      sessionStorage.removeItem('pulse_push_token');
-      showNotice('Push failed: invalid token. Try again.', 'var(--accent3)');
+      showNotice(
+        `Not signed in — open ${PULSE_WORKER_URL} in this browser first, then try again.`,
+        'var(--accent3)'
+      );
+      return;
+    }
+
+    if (res.status === 403) {
+      showNotice('Push failed: Manager role required.', 'var(--accent3)');
       return;
     }
 
