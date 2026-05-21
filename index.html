@@ -272,7 +272,30 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
 .modal-option-desc { font-size: 10px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .modal-actions .btn { width: auto; padding: 7px 16px; }
+/* Copy-to-clipboard button — icon-only, floating in card bottom-right corner */
+.card { position: relative; }
+.stat-grid-wrapper { position: relative; }
+.copy-png-btn {
+  position: absolute; bottom: 10px; right: 10px; z-index: 3;
+  width: 24px; height: 24px; padding: 0;
+  background: var(--surface2); border: 1px solid var(--border2); color: var(--text3);
+  border-radius: 4px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; line-height: 1;
+  opacity: 0; transition: opacity 0.15s, border-color 0.15s, color 0.15s, background 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.card:hover > .copy-png-btn,
+.stat-grid-wrapper:hover > .copy-png-btn,
+.copy-png-btn:focus { opacity: 1; }
+.copy-png-btn:hover { border-color: var(--accent); color: var(--accent); }
+.copy-png-btn.copied { opacity: 1; border-color: var(--accent4); color: var(--accent4); background: rgba(74,191,138,0.12); }
+.copy-png-btn.errored { opacity: 1; border-color: var(--accent3); color: var(--accent3); }
+.copy-png-btn.busy { opacity: 1; }
+/* Stat grid has no card padding — float button just outside, top-right */
+.stat-grid-wrapper > .copy-png-btn { bottom: auto; top: -4px; right: -4px; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
 <div class="tooltip" id="tooltip"></div>
@@ -2342,6 +2365,112 @@ async function deleteCloudSnapshot(name) {
     snapCloudMsg(`Delete failed: ${e.message}`, true);
   }
 }
+
+// =====================================================================
+// COPY CARD AS PNG TO CLIPBOARD
+// =====================================================================
+async function copyCardAsPNG(btn) {
+  // Walk up to the nearest .card or .stat-grid-wrapper
+  const card = btn.closest('.card') || btn.closest('.stat-grid-wrapper');
+  if (!card) return;
+
+  btn.innerHTML = '⋯';
+  btn.classList.add('busy');
+  btn.disabled = true;
+
+  try {
+    // Resolve CSS variables to computed values for html2canvas
+    const cs = getComputedStyle(document.documentElement);
+    const bg = cs.getPropertyValue('--surface').trim() || '#13161d';
+
+    const canvas = await html2canvas(card, {
+      backgroundColor: bg,
+      scale: 2, // 2× for retina-quality PNGs
+      logging: false,
+      useCORS: true,
+      // Ignore the copy button itself in the capture
+      ignoreElements: el => el.classList && el.classList.contains('copy-png-btn'),
+    });
+
+    canvas.toBlob(async blob => {
+      const reset = () => {
+        btn.innerHTML = '📋';
+        btn.classList.remove('copied', 'errored', 'busy');
+        btn.disabled = false;
+      };
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        btn.innerHTML = '✓';
+        btn.classList.remove('busy');
+        btn.classList.add('copied');
+        setTimeout(reset, 1500);
+      } catch (clipErr) {
+        // Fallback: download as file
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'studiopulse-chart.png';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        btn.innerHTML = '⬇';
+        btn.classList.remove('busy');
+        btn.classList.add('copied');
+        setTimeout(reset, 1500);
+      }
+    }, 'image/png');
+  } catch (err) {
+    console.error('Copy PNG failed:', err);
+    btn.innerHTML = '✗';
+    btn.classList.remove('busy');
+    btn.classList.add('errored');
+    setTimeout(() => {
+      btn.innerHTML = '📋';
+      btn.classList.remove('errored');
+      btn.disabled = false;
+    }, 1800);
+  }
+}
+
+// Auto-inject copy buttons into all .card corners (and stat-grid)
+function injectCopyButtons() {
+  document.querySelectorAll('.card').forEach(card => {
+    if (card.querySelector(':scope > .copy-png-btn')) return; // already has one
+    const btn = document.createElement('button');
+    btn.className = 'copy-png-btn';
+    btn.title = 'Copy chart as PNG to clipboard';
+    btn.setAttribute('aria-label', 'Copy chart as PNG');
+    btn.innerHTML = '📋';
+    btn.onclick = function(e) { e.stopPropagation(); copyCardAsPNG(this); };
+    card.appendChild(btn);
+  });
+
+  // Stat grid — wrap and add corner button
+  const statGrid = document.getElementById('stat-grid');
+  if (statGrid && !statGrid.parentElement.classList.contains('stat-grid-wrapper')) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'stat-grid-wrapper';
+    statGrid.parentElement.insertBefore(wrapper, statGrid);
+    wrapper.appendChild(statGrid);
+    const btn = document.createElement('button');
+    btn.className = 'copy-png-btn';
+    btn.title = 'Copy stats as PNG to clipboard';
+    btn.setAttribute('aria-label', 'Copy stats as PNG');
+    btn.innerHTML = '📋';
+    btn.onclick = function(e) { e.stopPropagation(); copyCardAsPNG(this); };
+    wrapper.appendChild(btn);
+  }
+}
+
+// Hook: inject copy buttons whenever the data view DOM changes
+const _copyBtnObserver = new MutationObserver(() => {
+  clearTimeout(_copyBtnObserver._t);
+  _copyBtnObserver._t = setTimeout(injectCopyButtons, 80);
+});
+document.addEventListener('DOMContentLoaded', () => {
+  const dv = document.getElementById('data-view');
+  if (dv) _copyBtnObserver.observe(dv, { childList: true, subtree: true });
+});
 </script>
 </body>
 </html>
