@@ -1652,9 +1652,9 @@ function doExportOfflineHTML() {
   // This is reliable because _HTML_BEFORE/_HTML_AFTER are the original source,
   // not the runtime DOM — so there are no duplicate const declarations.
   const dataBlock =
-    `const ROOM_META = ${JSON.stringify(ROOM_META)};\n` +
-    `const PREBAKED_ROWS = ${JSON.stringify(compactRows)};\n` +
-    `const PREBAKED_LABEL = ${JSON.stringify(label)};`;
+    `const ROOM_META = ${scriptSafeJSON(ROOM_META)};\n` +
+    `const PREBAKED_ROWS = ${scriptSafeJSON(compactRows)};\n` +
+    `const PREBAKED_LABEL = ${scriptSafeJSON(label)};`;
 
   let offlineHTML = _HTML_BEFORE + dataBlock + _HTML_AFTER;
 
@@ -2048,6 +2048,29 @@ window.addEventListener('resize',()=>{ if(currentTab==='trends') renderTrends();
 
 const PULSE_WORKER_URL = 'https://berklee.bryandimaio.com';
 
+function scriptSafeJSON(value) {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+function getEmbeddedRowsCount(html) {
+  const rowsMarker = 'const PREBAKED_ROWS = ';
+  const labelMarker = '\nconst PREBAKED_LABEL = ';
+  const rowsStart = html.indexOf(rowsMarker);
+  const labelStart = html.indexOf(labelMarker, rowsStart);
+  if (rowsStart === -1 || labelStart === -1) return -1;
+
+  try {
+    const rowsJson = html.slice(rowsStart + rowsMarker.length, labelStart);
+    const rows = JSON.parse(rowsJson);
+    return Array.isArray(rows) ? rows.length : -1;
+  } catch(e) {
+    return -1;
+  }
+}
+
 // Generates a fully self-contained offline HTML string from the current session data.
 function buildOfflineHTML() {
   const compactRows = allBookings.map(b =>
@@ -2059,9 +2082,9 @@ function buildOfflineHTML() {
     : 'Exported';
 
   const dataBlock =
-    `const ROOM_META = ${JSON.stringify(ROOM_META)};\n` +
-    `const PREBAKED_ROWS = ${JSON.stringify(compactRows)};\n` +
-    `const PREBAKED_LABEL = ${JSON.stringify(label)};`;
+    `const ROOM_META = ${scriptSafeJSON(ROOM_META)};\n` +
+    `const PREBAKED_ROWS = ${scriptSafeJSON(compactRows)};\n` +
+    `const PREBAKED_LABEL = ${scriptSafeJSON(label)};`;
 
   let html = _HTML_BEFORE + dataBlock + _HTML_AFTER;
 
@@ -2109,6 +2132,14 @@ async function pushToGitHub() {
 
   try {
     const offlineHTML = buildOfflineHTML();
+    const embeddedRows = getEmbeddedRowsCount(offlineHTML);
+    if (embeddedRows !== allBookings.length || embeddedRows <= 0) {
+      showNotice(
+        `Push aborted: generated HTML has ${embeddedRows < 0 ? 'invalid' : embeddedRows.toLocaleString()} embedded rows; expected ${allBookings.length.toLocaleString()}.`,
+        'var(--accent3)'
+      );
+      return;
+    }
 
     const res = await fetch(`${PULSE_WORKER_URL}/pulse/push`, {
       method: 'POST',
