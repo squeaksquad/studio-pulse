@@ -2063,7 +2063,9 @@ function getEmbeddedRowsCount(html) {
   if (rowsStart === -1 || labelStart === -1) return -1;
 
   try {
-    const rowsJson = html.slice(rowsStart + rowsMarker.length, labelStart);
+    const rowsEnd = html.lastIndexOf(';', labelStart);
+    if (rowsEnd === -1 || rowsEnd < rowsStart) return -1;
+    const rowsJson = html.slice(rowsStart + rowsMarker.length, rowsEnd);
     const rows = JSON.parse(rowsJson);
     return Array.isArray(rows) ? rows.length : -1;
   } catch(e) {
