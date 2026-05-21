@@ -1648,40 +1648,7 @@ function doExportOfflineHTML() {
         : `All datasets: ${dateStr(dr.min)} → ${dateStr(dr.max)}`)
     : 'Exported';
 
-  // Reconstruct the HTML from the stored template halves, splicing in live data.
-  // This is reliable because _HTML_BEFORE/_HTML_AFTER are the original source,
-  // not the runtime DOM — so there are no duplicate const declarations.
-  const dataBlock =
-    `const ROOM_META = ${scriptSafeJSON(ROOM_META)};\n` +
-    `const PREBAKED_ROWS = ${scriptSafeJSON(compactRows)};\n` +
-    `const PREBAKED_LABEL = ${scriptSafeJSON(label)};`;
-
-  let offlineHTML = _HTML_BEFORE + dataBlock + _HTML_AFTER;
-
-  // Inject a cleanup <style> block before </head>
-  const cleanup = '<style>' +
-    '.theme-toggle{display:none!important}' +
-    '@media(prefers-color-scheme:dark){' +
-      '[data-theme="light"]{' +
-        '--bg:#0d0f14;--surface:#13161d;--surface2:#1a1e28;' +
-        '--border:#252a38;--border2:#2e3448;' +
-        '--text:#e8ecf4;--text2:#8892aa;--text3:#525c72' +
-      '}' +
-      '[data-theme="light"] .dv-slot-label{color:#e8ecf4}' +
-      '[data-theme="light"] .dv-slot-sub{color:rgba(255,255,255,0.65)}' +
-      '[data-theme="light"] .dv-slot.booked:hover{filter:brightness(1.15)}' +
-    '}' +
-    '</style>';
-  const headClose = offlineHTML.indexOf('</head>');
-  if (headClose !== -1) {
-    offlineHTML = offlineHTML.slice(0, headClose) + cleanup + offlineHTML.slice(headClose);
-  }
-
-  const themeFix = '<script>document.documentElement.setAttribute("data-theme","light");<\/script>';
-  const bodyClose = offlineHTML.indexOf('</body>');
-  if (bodyClose !== -1) {
-    offlineHTML = offlineHTML.slice(0, bodyClose) + themeFix + offlineHTML.slice(bodyClose);
-  }
+  const offlineHTML = buildOfflineHTMLFromRows(compactRows, label);
 
   const blob = new Blob([offlineHTML], { type: 'text/html' });
   const a = document.createElement('a');
@@ -2055,22 +2022,63 @@ function scriptSafeJSON(value) {
     .replace(/\u2029/g, '\\u2029');
 }
 
-function getEmbeddedRowsCount(html) {
+function getEmbeddedData(html) {
   const rowsMarker = 'const PREBAKED_ROWS = ';
   const labelMarker = '\nconst PREBAKED_LABEL = ';
-  const rowsStart = html.indexOf(rowsMarker);
-  const labelStart = html.indexOf(labelMarker, rowsStart);
-  if (rowsStart === -1 || labelStart === -1) return -1;
+  let from = 0;
 
-  try {
-    const rowsEnd = html.lastIndexOf(';', labelStart);
-    if (rowsEnd === -1 || rowsEnd < rowsStart) return -1;
-    const rowsJson = html.slice(rowsStart + rowsMarker.length, rowsEnd);
-    const rows = JSON.parse(rowsJson);
-    return Array.isArray(rows) ? rows.length : -1;
-  } catch(e) {
-    return -1;
+  while (from < html.length) {
+    const rowsStart = html.indexOf(rowsMarker, from);
+    if (rowsStart === -1) return null;
+    const labelStart = html.indexOf(labelMarker, rowsStart);
+    if (labelStart === -1) return null;
+
+    try {
+      const rowsEnd = html.lastIndexOf(';', labelStart);
+      const labelEnd = html.indexOf(';', labelStart + labelMarker.length);
+      if (rowsEnd !== -1 && rowsEnd > rowsStart && labelEnd !== -1) {
+        const rowsJson = html.slice(rowsStart + rowsMarker.length, rowsEnd);
+        const labelJson = html.slice(labelStart + labelMarker.length, labelEnd);
+        const rows = JSON.parse(rowsJson);
+        const label = JSON.parse(labelJson);
+        if (Array.isArray(rows)) return { rows, label };
+      }
+    } catch(e) {}
+
+    from = rowsStart + rowsMarker.length;
   }
+
+  return null;
+}
+
+function getEmbeddedRowsCount(html) {
+  const embedded = getEmbeddedData(html);
+  return embedded ? embedded.rows.length : -1;
+}
+
+function buildOfflineHTMLFromRows(compactRows, label) {
+  const dataBlock =
+    `const ROOM_META = ${scriptSafeJSON(ROOM_META)};\n` +
+    `const PREBAKED_ROWS = ${scriptSafeJSON(compactRows)};\n` +
+    `const PREBAKED_LABEL = ${scriptSafeJSON(label)};`;
+
+  const doc = document.documentElement.cloneNode(true);
+  const scripts = doc.querySelectorAll('script');
+  const script = scripts[scripts.length - 1];
+  if (!script) throw new Error('Cannot build offline HTML: script block not found');
+
+  let source = script.textContent;
+  const dataStart = source.indexOf('\nconst ROOM_META = ', source.indexOf('const _HTML_AFTER'));
+  const dataEndMarker = '\n\n// =====================================================================\n// ROOM LOOKUP';
+  const dataEnd = source.indexOf(dataEndMarker, dataStart);
+  if (dataStart === -1 || dataEnd === -1) {
+    throw new Error('Cannot build offline HTML: data block not found');
+  }
+
+  source = source.slice(0, dataStart + 1) + dataBlock + source.slice(dataEnd);
+  script.textContent = source;
+
+  return '<!DOCTYPE html>\n' + doc.outerHTML;
 }
 
 // Generates a fully self-contained offline HTML string from the current session data.
@@ -2082,43 +2090,7 @@ function buildOfflineHTML() {
   const label = dr
     ? `All datasets: ${dateStr(dr.min)} → ${dateStr(dr.max)}`
     : 'Exported';
-
-  const dataBlock =
-    `const ROOM_META = ${scriptSafeJSON(ROOM_META)};\n` +
-    `const PREBAKED_ROWS = ${scriptSafeJSON(compactRows)};\n` +
-    `const PREBAKED_LABEL = ${scriptSafeJSON(label)};`;
-
-  let html = _HTML_BEFORE + dataBlock + _HTML_AFTER;
-
-  // Inject a cleanup <style> block before </head> — hides the legacy toggle
-  // and makes the theme follow the browser preference instead of data-theme attr.
-  const cleanup = '<style>' +
-    '.theme-toggle{display:none!important}' +
-    '@media(prefers-color-scheme:dark){' +
-      '[data-theme="light"]{' +
-        '--bg:#0d0f14;--surface:#13161d;--surface2:#1a1e28;' +
-        '--border:#252a38;--border2:#2e3448;' +
-        '--text:#e8ecf4;--text2:#8892aa;--text3:#525c72' +
-      '}' +
-      '[data-theme="light"] .dv-slot-label{color:#e8ecf4}' +
-      '[data-theme="light"] .dv-slot-sub{color:rgba(255,255,255,0.65)}' +
-      '[data-theme="light"] .dv-slot.booked:hover{filter:brightness(1.15)}' +
-    '}' +
-    '</style>';
-  const headClose = html.indexOf('</head>');
-  if (headClose !== -1) {
-    html = html.slice(0, headClose) + cleanup + html.slice(headClose);
-  }
-
-  // Inject a script before </body> that re-asserts data-theme="light" after the
-  // legacy IIFE runs (which might have removed it based on localStorage state).
-  const themeFix = '<script>document.documentElement.setAttribute("data-theme","light");<\/script>';
-  const bodyClose = html.indexOf('</body>');
-  if (bodyClose !== -1) {
-    html = html.slice(0, bodyClose) + themeFix + html.slice(bodyClose);
-  }
-
-  return html;
+  return buildOfflineHTMLFromRows(compactRows, label);
 }
 
 async function pushToGitHub() {
@@ -2317,21 +2289,9 @@ async function openSnapshot(name) {
     if (!res.ok) throw new Error(await res.text());
     const html = await res.text();
 
-    // Extract PREBAKED_ROWS and PREBAKED_LABEL from the embedded data block.
-    // Format: const PREBAKED_ROWS = [...];\nconst PREBAKED_LABEL = "...";
-    const rowsMarker = 'const PREBAKED_ROWS = ';
-    const labelMarker = 'const PREBAKED_LABEL = ';
-    const rowsStart = html.indexOf(rowsMarker);
-    const labelStart = html.indexOf(labelMarker, rowsStart);
-    if (rowsStart === -1 || labelStart === -1) throw new Error('Snapshot has no embedded data');
-    // PREBAKED_ROWS value ends right before the newline + labelMarker
-    const rowsValEnd = html.lastIndexOf(';', labelStart);
-    const rowsJson = html.slice(rowsStart + rowsMarker.length, rowsValEnd);
-    const rows = JSON.parse(rowsJson);
-    // PREBAKED_LABEL value ends at the next ';'
-    const labelValEnd = html.indexOf(';', labelStart + labelMarker.length);
-    const labelJson = html.slice(labelStart + labelMarker.length, labelValEnd);
-    const snapLabel = JSON.parse(labelJson);
+    const embedded = getEmbeddedData(html);
+    if (!embedded) throw new Error('Snapshot has no embedded data');
+    const { rows, label: snapLabel } = embedded;
 
     // Reuse the same compact-row processing as the offline data loader
     const { bookings, semMon } = processCompactRows(rows);
