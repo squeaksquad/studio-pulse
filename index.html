@@ -2038,8 +2038,9 @@ function buildOfflineHTML() {
 
   let html = _HTML_BEFORE + dataBlock + _HTML_AFTER;
 
-  // Remove data-theme="light" from <html> tag (legacy in template)
+  // Remove legacy theme toggle from template
   html = html.replace(' data-theme="light"', '');
+  html = html.replace(/<button[^>]*class="theme-toggle"[^>]*>.*?<\/button>\s*/g, '');
 
   // Inject prefers-color-scheme light mode CSS before </style>
   const lightCSS = `
