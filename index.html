@@ -230,7 +230,21 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
 /* Snapshot banner */
 .snapshot-banner { background: rgba(79,142,247,0.07); border: 1px solid rgba(79,142,247,0.2); border-radius: 6px; padding: 9px 13px; font-size: 11px; color: var(--accent); display: flex; align-items: center; gap: 8px; }
 
-/* Empty — removed: unused, was bleeding padding into .dv-slot.empty */
+/* Snapshot Panel */
+.snap-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 14px 18px; }
+.snap-save-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.snap-save-row input { flex: 1; margin: 0; }
+.snap-msg { font-size: 11px; color: var(--accent4); margin-bottom: 8px; font-weight: 500; }
+.snap-msg.error { color: var(--accent3); }
+.snap-list { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px; }
+.snap-list-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); margin-bottom: 8px; }
+.snap-item { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.snap-item:last-child { border-bottom: none; }
+.snap-item-name { font-size: 12px; font-weight: 600; color: var(--text); flex: 1; }
+.snap-item-meta { font-size: 10px; color: var(--text3); }
+.snap-item .btn.secondary { width: auto; padding: 4px 10px; font-size: 10px; }
+.btn-snap-delete { color: var(--accent3) !important; border-color: rgba(224,92,92,0.3) !important; }
+.btn-snap-delete:hover { background: rgba(224,92,92,0.08) !important; border-color: var(--accent3) !important; }
 
 /* Chart containers */
 .chart-svg-wrap { width: 100%; overflow: visible; }
@@ -304,9 +318,25 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
   <div class="header-right">
     <span class="hdr-count" id="booking-count"></span>
     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">Dark</button>
+    <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="toggleSnapPanel()" id="snap-toggle-btn">📂 Snapshots</button>
     <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="exportSnapshot()">⬇ Export Snapshot</button>
     <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="openOfflineModal()">⬇ Offline HTML</button>
     <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="pushToGitHub()" id="push-btn">⬆ Push to GitHub</button>
+  </div>
+</div>
+
+<div class="snap-panel" id="snap-panel" style="display:none;margin:0 0 0 0;border-radius:0;border-left:none;border-right:none;">
+  <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:240px;">
+      <div class="snap-save-row">
+        <input type="text" id="snap-cloud-name" placeholder="Snapshot name…" style="font-size:12px;padding:6px 10px;" onkeydown="if(event.key==='Enter')saveCloudSnapshot()">
+        <button class="btn" style="width:auto;padding:6px 14px;" onclick="saveCloudSnapshot()" id="snap-save-btn">Save</button>
+      </div>
+      <div class="snap-msg" id="snap-cloud-msg" style="display:none;"></div>
+    </div>
+    <div style="flex:2;min-width:300px;">
+      <div id="snap-cloud-list"></div>
+    </div>
   </div>
 </div>
 
@@ -2023,36 +2053,25 @@ window.addEventListener('resize',()=>{ if(currentTab==='trends') renderTrends();
 
 const PULSE_WORKER_URL = 'https://berklee.bryandimaio.com';
 
-async function pushToGitHub() {
-  if (!allBookings.length) {
-    showNotice('No data loaded — nothing to push.', 'var(--accent3)');
-    return;
-  }
+// Generates a fully self-contained offline HTML string from the current session data.
+function buildOfflineHTML() {
+  const compactRows = allBookings.map(b =>
+    [b.day, b.startMin, b.endMin, b.building, b.room, b.status, b.eventType, b.name, b.eventName || '']
+  );
+  const dr = getDateRange(allBookings);
+  const label = dr
+    ? `All datasets: ${dateStr(dr.min)} → ${dateStr(dr.max)}`
+    : 'Exported';
 
-  const btn = document.getElementById('push-btn');
-  const origText = btn.textContent;
-  btn.textContent = '⬆ Pushing…';
-  btn.disabled = true;
+  const dataBlock =
+    `const ROOM_META = ${JSON.stringify(ROOM_META)};\n` +
+    `const PREBAKED_ROWS = ${JSON.stringify(compactRows)};\n` +
+    `const PREBAKED_LABEL = ${JSON.stringify(label)};`;
 
-  try {
-    const compactRows = allBookings.map(b =>
-      [b.day, b.startMin, b.endMin, b.building, b.room, b.status, b.eventType, b.name, b.eventName || '']
-    );
-    const dr = getDateRange(allBookings);
-    const label = dr
-      ? `All datasets: ${dateStr(dr.min)} → ${dateStr(dr.max)}`
-      : 'Exported';
+  let html = _HTML_BEFORE + dataBlock + _HTML_AFTER;
 
-    const dataBlock =
-      `const ROOM_META = ${JSON.stringify(ROOM_META)};\n` +
-      `const PREBAKED_ROWS = ${JSON.stringify(compactRows)};\n` +
-      `const PREBAKED_LABEL = ${JSON.stringify(label)};`;
-
-    let offlineHTML = _HTML_BEFORE + dataBlock + _HTML_AFTER;
-
-    // 1. Inject light mode CSS — insert before the first </style> using slice
-    //    (avoids fragile whitespace-sensitive string matching)
-    const lightCSS = `
+  // Inject light mode CSS
+  const lightCSS = `
 [data-theme="light"] {
   --bg: #f0f2f7; --surface: #ffffff; --surface2: #e8ebf2;
   --border: #d0d5e3; --border2: #b8bfd4;
@@ -2068,34 +2087,49 @@ async function pushToGitHub() {
 }
 .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
 `;
-    const styleCloseIdx = offlineHTML.indexOf('</style>');
-    if (styleCloseIdx !== -1) {
-      offlineHTML = offlineHTML.slice(0, styleCloseIdx) + lightCSS + offlineHTML.slice(styleCloseIdx);
-    }
+  const styleCloseIdx = html.indexOf('</style>');
+  if (styleCloseIdx !== -1) {
+    html = html.slice(0, styleCloseIdx) + lightCSS + html.slice(styleCloseIdx);
+  }
 
-    // 2. Inject theme toggle button before the Export Snapshot button
-    //    Find the button by its unique onclick, then walk back to its opening <button tag
-    const exportOnclickIdx = offlineHTML.indexOf('onclick="exportSnapshot()"');
-    if (exportOnclickIdx !== -1) {
-      const btnOpenIdx = offlineHTML.lastIndexOf('<button', exportOnclickIdx);
-      if (btnOpenIdx !== -1) {
-        offlineHTML = offlineHTML.slice(0, btnOpenIdx) +
-          '<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">Dark</button>\n    ' +
-          offlineHTML.slice(btnOpenIdx);
-      }
+  // Inject theme toggle button before the Export Snapshot button
+  const exportOnclickIdx = html.indexOf('onclick="exportSnapshot()"');
+  if (exportOnclickIdx !== -1) {
+    const btnOpenIdx = html.lastIndexOf('<button', exportOnclickIdx);
+    if (btnOpenIdx !== -1) {
+      html = html.slice(0, btnOpenIdx) +
+        '<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">Dark</button>\n    ' +
+        html.slice(btnOpenIdx);
     }
+  }
 
-    // 3. Inject toggleTheme as a SEPARATE <script> tag before </body>
-    //    Never touches the main script block — eliminates any risk of SyntaxError
-    const toggleScript = '<script>\nfunction toggleTheme(){var root=document.documentElement;var isLight=root.getAttribute(\'data-theme\')===\'light\';var next=isLight?\'dark\':\'light\';if(next===\'dark\')root.removeAttribute(\'data-theme\');else root.setAttribute(\'data-theme\',\'light\');var btn=document.getElementById(\'theme-toggle\');if(btn)btn.textContent=next===\'light\'?\'Dark\':\'Light\';try{localStorage.setItem(\'sp-theme\',next);}catch(e){}}\nwindow.addEventListener(\'DOMContentLoaded\',function(){try{var saved=localStorage.getItem(\'sp-theme\');if(saved===\'dark\'){document.documentElement.removeAttribute(\'data-theme\');var btn=document.getElementById(\'theme-toggle\');if(btn)btn.textContent=\'Light\';}}catch(e){}});\n<\/script>';
-    const bodyCloseIdx = offlineHTML.lastIndexOf('</body>');
-    if (bodyCloseIdx !== -1) {
-      offlineHTML = offlineHTML.slice(0, bodyCloseIdx) + toggleScript + '\n' + offlineHTML.slice(bodyCloseIdx);
-    }
+  // Inject toggleTheme as a SEPARATE <script> tag before </body>
+  const toggleScript = '<script>\nfunction toggleTheme(){var root=document.documentElement;var isLight=root.getAttribute(\'data-theme\')===\'light\';var next=isLight?\'dark\':\'light\';if(next===\'dark\')root.removeAttribute(\'data-theme\');else root.setAttribute(\'data-theme\',\'light\');var btn=document.getElementById(\'theme-toggle\');if(btn)btn.textContent=next===\'light\'?\'Dark\':\'Light\';try{localStorage.setItem(\'sp-theme\',next);}catch(e){}}\nwindow.addEventListener(\'DOMContentLoaded\',function(){try{var saved=localStorage.getItem(\'sp-theme\');if(saved===\'dark\'){document.documentElement.removeAttribute(\'data-theme\');var btn=document.getElementById(\'theme-toggle\');if(btn)btn.textContent=\'Light\';}}catch(e){}});\n<\/script>';
+  const bodyCloseIdx = html.lastIndexOf('</body>');
+  if (bodyCloseIdx !== -1) {
+    html = html.slice(0, bodyCloseIdx) + toggleScript + '\n' + html.slice(bodyCloseIdx);
+  }
+
+  return html;
+}
+
+async function pushToGitHub() {
+  if (!allBookings.length) {
+    showNotice('No data loaded — nothing to push.', 'var(--accent3)');
+    return;
+  }
+
+  const btn = document.getElementById('push-btn');
+  const origText = btn.textContent;
+  btn.textContent = '⬆ Pushing…';
+  btn.disabled = true;
+
+  try {
+    const offlineHTML = buildOfflineHTML();
 
     const res = await fetch(`${PULSE_WORKER_URL}/pulse/push`, {
       method: 'POST',
-      credentials: 'include',  // sends Worker session cookie automatically
+      credentials: 'include',
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
       body: offlineHTML,
     });
@@ -2121,7 +2155,7 @@ async function pushToGitHub() {
 
     const result = await res.json();
     showNotice(
-      `✓ Pushed to GitHub (${compactRows.length.toLocaleString()} bookings, ${result.date})`,
+      `✓ Pushed to GitHub (${allBookings.length.toLocaleString()} bookings, ${result.date})`,
       'var(--accent4)'
     );
   } catch(e) {
@@ -2129,6 +2163,137 @@ async function pushToGitHub() {
   } finally {
     btn.textContent = origText;
     btn.disabled = false;
+  }
+}
+
+// =====================================================================
+// CLOUD SNAPSHOTS (Worker → GitHub repo)
+// Each snapshot is a self-contained offline HTML committed to
+// snapshots/{name}.html in the studio-pulse-data repo.
+// =====================================================================
+let snapPanelOpen = false;
+let cloudSnapshots = [];
+
+function toggleSnapPanel() {
+  snapPanelOpen = !snapPanelOpen;
+  const panel = document.getElementById('snap-panel');
+  const btn = document.getElementById('snap-toggle-btn');
+  panel.style.display = snapPanelOpen ? '' : 'none';
+  btn.style.borderColor = snapPanelOpen ? 'var(--accent)' : '';
+  btn.style.color = snapPanelOpen ? 'var(--accent)' : '';
+  if (snapPanelOpen) listCloudSnapshots();
+}
+
+function snapCloudMsg(text, isError) {
+  const el = document.getElementById('snap-cloud-msg');
+  el.textContent = text;
+  el.className = 'snap-msg' + (isError ? ' error' : '');
+  el.style.display = text ? '' : 'none';
+  if (text && !isError) {
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => { el.style.display = 'none'; }, 4000);
+  }
+}
+
+async function listCloudSnapshots() {
+  try {
+    const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshots`, { credentials: 'include' });
+    if (res.status === 401) { snapCloudMsg('Not signed in — open the Worker URL first.', true); return; }
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    cloudSnapshots = (data.snapshots || []).sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+    renderCloudSnapList();
+  } catch (e) {
+    snapCloudMsg(`Failed to list: ${e.message}`, true);
+  }
+}
+
+function renderCloudSnapList() {
+  const el = document.getElementById('snap-cloud-list');
+  if (!cloudSnapshots.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text3);">No saved snapshots yet.</div>';
+    return;
+  }
+  el.innerHTML = '<div class="snap-list-title">Saved Snapshots</div>' +
+    cloudSnapshots.map(s => {
+      const meta = [
+        s.bookingCount ? s.bookingCount.toLocaleString() + ' bookings' : '',
+        s.datasetCount ? s.datasetCount + ' dataset' + (s.datasetCount > 1 ? 's' : '') : '',
+        s.dateRange ? s.dateRange : '',
+      ].filter(Boolean).join(' · ');
+      const date = s.savedAt ? new Date(s.savedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+      return `<div class="snap-item">
+        <div style="flex:1;min-width:0;">
+          <div class="snap-item-name">${escHtml(s.name)}</div>
+          <div class="snap-item-meta">${meta}${date ? ' · ' + date : ''}</div>
+        </div>
+        <button class="btn secondary" onclick="openSnapshot('${escAttr(s.name)}')">Open</button>
+        <button class="btn secondary btn-snap-delete" onclick="deleteCloudSnapshot('${escAttr(s.name)}')">✕</button>
+      </div>`;
+    }).join('');
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+async function saveCloudSnapshot() {
+  const nameEl = document.getElementById('snap-cloud-name');
+  const name = nameEl.value.trim();
+  if (!name) { snapCloudMsg('Enter a name for the snapshot.', true); return; }
+  if (!allBookings.length) { snapCloudMsg('No data loaded.', true); return; }
+
+  const btn = document.getElementById('snap-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  snapCloudMsg('');
+
+  try {
+    const html = buildOfflineHTML();
+    const dr = getDateRange(allBookings);
+    const meta = {
+      bookingCount: allBookings.length,
+      datasetCount: datasets.length,
+      dateRange: dr ? `${dateStr(dr.min)} → ${dateStr(dr.max)}` : null,
+    };
+    const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshot/${encodeURIComponent(name)}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'X-Pulse-Meta': JSON.stringify(meta),
+      },
+      body: html,
+    });
+    if (res.status === 401) { snapCloudMsg('Not signed in.', true); return; }
+    if (!res.ok) throw new Error(await res.text());
+    snapCloudMsg(`Saved "${name}"`);
+    nameEl.value = '';
+    listCloudSnapshots();
+  } catch (e) {
+    snapCloudMsg(`Save failed: ${e.message}`, true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save';
+  }
+}
+
+function openSnapshot(name) {
+  // Worker serves the HTML directly from the GitHub repo
+  window.open(`${PULSE_WORKER_URL}/pulse/snapshot/${encodeURIComponent(name)}`, '_blank');
+}
+
+async function deleteCloudSnapshot(name) {
+  if (!confirm(`Delete snapshot "${name}"?`)) return;
+  snapCloudMsg('');
+  try {
+    const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshot/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (res.status === 401) { snapCloudMsg('Not signed in.', true); return; }
+    if (!res.ok) throw new Error(await res.text());
+    snapCloudMsg(`Deleted "${name}"`);
+    listCloudSnapshots();
+  } catch (e) {
+    snapCloudMsg(`Delete failed: ${e.message}`, true);
   }
 }
 </script>
