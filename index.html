@@ -1868,7 +1868,7 @@ function renderDayView() {
           `${b.eventType} \u00b7 ${b.status}`
         ].filter(Boolean).join('<br>');
         const subHtml = secondaryLabel ? `<span class="dv-slot-sub">${secondaryLabel}</span>` : '';
-        html += `<td colspan="${span}"><div class="dv-slot booked" style="background:${color}99;border-left:3px solid ${color}"
+        html += `<td colspan="${span}"><div class="dv-slot booked" style="background:${color}cc;border-left:3px solid ${color}"
           onmouseenter="tip(event,'${tipTxt.replace(/'/g,"&#39;")}')" onmouseleave="untip()">
           <span class="dv-slot-label">${primaryLabel}</span>${subHtml}
         </div></td>`;
