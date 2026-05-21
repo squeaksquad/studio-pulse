@@ -2252,7 +2252,7 @@ async function saveCloudSnapshot() {
     const meta = {
       bookingCount: allBookings.length,
       datasetCount: datasets.length,
-      dateRange: dr ? `${dateStr(dr.min)} → ${dateStr(dr.max)}` : null,
+      dateRange: dr ? `${dateStr(dr.min)} to ${dateStr(dr.max)}` : null,
     };
     const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshot/${encodeURIComponent(name)}`, {
       method: 'PUT',
