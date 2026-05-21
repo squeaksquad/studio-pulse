@@ -1656,14 +1656,24 @@ function doExportOfflineHTML() {
 
   let offlineHTML = _HTML_BEFORE + dataBlock + _HTML_AFTER;
 
-  // Strip legacy theme toggle
-  offlineHTML = offlineHTML.replace(' data-theme="light"', '');
-  offlineHTML = offlineHTML.replace(/<button[^>]*class="theme-toggle"[^>]*>.*?<\/button>\s*/g, '');
-
-  // Inject prefers-color-scheme light mode CSS
-  const lightCSS = `\n@media (prefers-color-scheme: light) {\n  :root {\n    --bg: #f0f2f7; --surface: #ffffff; --surface2: #e8ebf2;\n    --border: #d0d5e3; --border2: #b8bfd4;\n    --text: #1a1e2e; --text2: #4a5270; --text3: #8892aa;\n  }\n  .dv-slot-label { color: #1a1e2e; }\n  .dv-slot-sub { color: rgba(26,30,46,0.6); }\n  .dv-slot.booked:hover { filter: brightness(0.93); }\n}\n`;
-  const styleIdx = offlineHTML.indexOf('</style>');
-  if (styleIdx !== -1) offlineHTML = offlineHTML.slice(0, styleIdx) + lightCSS + offlineHTML.slice(styleIdx);
+  // Inject a cleanup <style> block before </head>
+  const cleanup = '<style>' +
+    '.theme-toggle{display:none!important}' +
+    '@media(prefers-color-scheme:dark){' +
+      '[data-theme="light"]{' +
+        '--bg:#0d0f14;--surface:#13161d;--surface2:#1a1e28;' +
+        '--border:#252a38;--border2:#2e3448;' +
+        '--text:#e8ecf4;--text2:#8892aa;--text3:#525c72' +
+      '}' +
+      '[data-theme="light"] .dv-slot-label{color:#e8ecf4}' +
+      '[data-theme="light"] .dv-slot-sub{color:rgba(255,255,255,0.65)}' +
+      '[data-theme="light"] .dv-slot.booked:hover{filter:brightness(1.15)}' +
+    '}' +
+    '</style>';
+  const headClose = offlineHTML.indexOf('</head>');
+  if (headClose !== -1) {
+    offlineHTML = offlineHTML.slice(0, headClose) + cleanup + offlineHTML.slice(headClose);
+  }
 
   const blob = new Blob([offlineHTML], { type: 'text/html' });
   const a = document.createElement('a');
@@ -2047,26 +2057,24 @@ function buildOfflineHTML() {
 
   let html = _HTML_BEFORE + dataBlock + _HTML_AFTER;
 
-  // Remove legacy theme toggle from template
-  html = html.replace(' data-theme="light"', '');
-  html = html.replace(/<button[^>]*class="theme-toggle"[^>]*>.*?<\/button>\s*/g, '');
-
-  // Inject prefers-color-scheme light mode CSS before </style>
-  const lightCSS = `
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f0f2f7; --surface: #ffffff; --surface2: #e8ebf2;
-    --border: #d0d5e3; --border2: #b8bfd4;
-    --text: #1a1e2e; --text2: #4a5270; --text3: #8892aa;
-  }
-  .dv-slot-label { color: #1a1e2e; }
-  .dv-slot-sub { color: rgba(26,30,46,0.6); }
-  .dv-slot.booked:hover { filter: brightness(0.93); }
-}
-`;
-  const styleCloseIdx = html.indexOf('</style>');
-  if (styleCloseIdx !== -1) {
-    html = html.slice(0, styleCloseIdx) + lightCSS + html.slice(styleCloseIdx);
+  // Inject a cleanup <style> block before </head> — hides the legacy toggle
+  // and makes the theme follow the browser preference instead of data-theme attr.
+  const cleanup = '<style>' +
+    '.theme-toggle{display:none!important}' +
+    '@media(prefers-color-scheme:dark){' +
+      '[data-theme="light"]{' +
+        '--bg:#0d0f14;--surface:#13161d;--surface2:#1a1e28;' +
+        '--border:#252a38;--border2:#2e3448;' +
+        '--text:#e8ecf4;--text2:#8892aa;--text3:#525c72' +
+      '}' +
+      '[data-theme="light"] .dv-slot-label{color:#e8ecf4}' +
+      '[data-theme="light"] .dv-slot-sub{color:rgba(255,255,255,0.65)}' +
+      '[data-theme="light"] .dv-slot.booked:hover{filter:brightness(1.15)}' +
+    '}' +
+    '</style>';
+  const headClose = html.indexOf('</head>');
+  if (headClose !== -1) {
+    html = html.slice(0, headClose) + cleanup + html.slice(headClose);
   }
 
   return html;
