@@ -376,6 +376,7 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
   <div class="header-right">
     <span class="hdr-count" id="booking-count"></span>
     <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="toggleSnapPanel()" id="snap-toggle-btn">📂 Snapshots</button>
+    <button class="btn secondary" style="width:auto;padding:5px 10px;display:none;" onclick="resetToArchiveView()" id="archive-reset-btn">Reset to All Data</button>
     <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="exportSnapshot()">⬇ Export Snapshot</button>
     <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="openOfflineModal()">⬇ Offline HTML</button>
     <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="pushToGitHub()" id="push-btn">⬆ Push to GitHub</button>
@@ -748,6 +749,7 @@ const _HTML_AFTER = "\n// ======================================================
 const ROOM_META = [{"name": "Studio A", "key": "136-B01", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Studio B", "key": "136-B14", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Suite B06", "key": "136-B06", "type": "Production Suite", "live_room": "Iso Booth", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Suite B04", "key": "136-B04", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Studio E", "key": "136-B09", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Studio F", "key": "136-B07", "type": "Studio", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Suite A76", "key": "150-A76.2", "type": "Production Suite", "live_room": "Yes", "drums": "Yes", "drums_students": "Yes", "monitoring": "Stereo", "building": "150"}, {"name": "Studio 116", "key": "150-116", "type": "Studio", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "150"}, {"name": "Studio A92", "key": "150-A92", "type": "Studio", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "5.1 Surround", "building": "150"}, {"name": "Studio BPC", "key": "150-156", "type": "Studio", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "150"}, {"name": "Tech Lab B05", "key": "136-B05", "type": "Edit Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "136"}, {"name": "Suite A", "key": "150-A68", "type": "Production Suite", "live_room": "Yes", "drums": "No", "drums_students": "No", "monitoring": "5.1 Surround", "building": "150"}, {"name": "Suite B", "key": "150-A66", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "7.1.2 Dolby Atmos", "building": "150"}, {"name": "Suite C", "key": "150-A64", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "7.1.2 Dolby Atmos", "building": "150"}, {"name": "Suite T", "key": "150-A65", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "7.1.4 Dolby Atmos", "building": "150"}, {"name": "Studio 165", "key": "150-165", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "150"}, {"name": "Studio 168", "key": "150-168", "type": "Studio", "live_room": "Yes", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "150"}, {"name": "Project Band", "key": "1108-302", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "Yes", "monitoring": "Stereo", "building": "1108"}, {"name": "Studio 1", "key": "160-A144", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "No", "monitoring": "Stereo", "building": "160"}, {"name": "Studio 2", "key": "160-A132", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "No", "monitoring": "Stereo", "building": "160"}, {"name": "Studio 3", "key": "160-B247", "type": "Studio", "live_room": "Yes", "drums": "Yes", "drums_students": "No", "monitoring": "Stereo", "building": "160"}, {"name": "Dub Stage", "key": "160-B242", "type": "Studio", "live_room": "Iso Booth", "drums": "No", "drums_students": "No", "monitoring": "9.1.6 Dolby Atmos", "building": "160"}, {"name": "Mastering", "key": "160-B256", "type": "Studio", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "7.1.4 Dolby Atmos", "building": "160"}, {"name": "Suite 1", "key": "160-B231", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "5.1 Surround", "building": "160"}, {"name": "Suite 2", "key": "160-B234", "type": "Production Suite", "live_room": "Iso Booth", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "160"}, {"name": "Suite 3", "key": "160-B236", "type": "Production Suite", "live_room": "Iso Booth", "drums": "Yes", "drums_students": "Yes", "monitoring": "Stereo", "building": "160"}, {"name": "Suite 4", "key": "160-B238", "type": "Production Suite", "live_room": "Iso Booth", "drums": "Yes", "drums_students": "Yes", "monitoring": "Stereo", "building": "160"}, {"name": "Tech Booth B53.1", "key": "150-B53.1", "type": "Production Suite", "live_room": "Iso Booth", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "150"}, {"name": "Tech Class A60", "key": "150-A60", "type": "Other", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "150"}, {"name": "Suite 307 + LR", "key": "921-307", "type": "Production Suite", "live_room": "Yes", "drums": "Yes", "drums_students": "Yes", "monitoring": "Stereo", "building": "921"}, {"name": "Suite 309", "key": "921-309", "type": "Production Suite", "live_room": "No", "drums": "No", "drums_students": "No", "monitoring": "Stereo", "building": "921"}];
 const PREBAKED_ROWS = null;
 const PREBAKED_LABEL = null;
+const PREBAKED_STATE = null;
 
 // =====================================================================
 // ROOM LOOKUP
@@ -770,6 +772,8 @@ let datasets = [];
 let savedPeriods = [];
 let currentTab = 'overview';
 let semesterMonday = null; // global for current primary dataset
+let archiveDatasets = null;
+let restoredSnapshotName = '';
 
 function isDatasetSelected(ds) {
   return ds?.selected !== false;
@@ -783,6 +787,37 @@ function rebuildActiveBookings() {
   const { deduped } = deduplicateBookings(getSelectedDatasets().flatMap(ds => ds.bookings));
   allBookings = deduped;
   return allBookings;
+}
+
+function cloneDatasetsForArchive(src=datasets) {
+  return src.map(ds => ({
+    ...ds,
+    dateRange: ds.dateRange ? { min: new Date(ds.dateRange.min), max: new Date(ds.dateRange.max) } : null,
+    bookings: [...ds.bookings],
+  }));
+}
+
+function rememberArchiveView() {
+  archiveDatasets = cloneDatasetsForArchive();
+  restoredSnapshotName = '';
+  updateArchiveResetButton();
+}
+
+function updateArchiveResetButton() {
+  const btn = document.getElementById('archive-reset-btn');
+  if (!btn) return;
+  btn.style.display = restoredSnapshotName && archiveDatasets?.length ? '' : 'none';
+}
+
+function resetToArchiveView() {
+  if (!archiveDatasets?.length) return;
+  datasets = cloneDatasetsForArchive(archiveDatasets);
+  restoredSnapshotName = '';
+  rebuildActiveBookings();
+  initDataView();
+  switchTab('overview');
+  updateArchiveResetButton();
+  showNotice('Reset to all saved snapshot data');
 }
 
 // =====================================================================
@@ -901,6 +936,7 @@ window.addEventListener('DOMContentLoaded', () => {
     allBookings = bookings;
     datasets = [{ label: PREBAKED_LABEL, bookings, semMon, dateRange: getDateRange(bookings), selected: true }];
     initDataView();
+    if (PREBAKED_STATE) restoreViewState(PREBAKED_STATE);
   } else {
     // No embedded data — hydrate from saved cloud snapshots when possible.
     document.getElementById('no-data').style.display = 'flex';
@@ -1023,6 +1059,129 @@ function loadSavedPeriods() {
 
 function persistSavedPeriods() {
   try { localStorage.setItem('sp-saved-periods', JSON.stringify(savedPeriods)); } catch(e) {}
+}
+
+function checkedValues(containerId) {
+  return [...document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)].map(c => c.value);
+}
+
+function setCheckedValues(containerId, values) {
+  if (!Array.isArray(values)) return;
+  const keep = new Set(values);
+  document.querySelectorAll(`#${containerId} input[type=checkbox]`).forEach(c => { c.checked = keep.has(c.value); });
+}
+
+function captureViewState() {
+  const rangeCompare = [];
+  for (let i = 0; i < 3; i++) {
+    const box = document.getElementById(`rc-box-${i}`);
+    rangeCompare.push({
+      visible: !box || box.style.display !== 'none',
+      enabled: document.getElementById(`rc-enabled-${i}`)?.checked !== false,
+      label: document.getElementById(`rc-label-${i}`)?.value || '',
+      start: document.getElementById(`rc-start-${i}`)?.value || '',
+      end: document.getElementById(`rc-end-${i}`)?.value || '',
+    });
+  }
+  return {
+    version: 1,
+    currentTab,
+    filters: {
+      start: document.getElementById('f-start')?.value || '',
+      end: document.getElementById('f-end')?.value || '',
+      buildings: checkedValues('f-buildings'),
+      roomTypes: checkedValues('f-room-types'),
+      statuses: checkedValues('f-statuses'),
+      eventTypes: checkedValues('f-event-types'),
+      eventSearch: document.getElementById('evt-search')?.value || '',
+      capabilities: {
+        live: !!document.getElementById('cap-live')?.checked,
+        iso: !!document.getElementById('cap-iso')?.checked,
+        drums: !!document.getElementById('cap-drums')?.checked,
+        drumsStudents: !!document.getElementById('cap-drums-stu')?.checked,
+        surround: !!document.getElementById('cap-surround')?.checked,
+        atmos: !!document.getElementById('cap-atmos')?.checked,
+      },
+    },
+    overviewMetric: document.getElementById('overview-metric')?.value || 'count',
+    heatmaps: {
+      showValues: !!document.getElementById('hm-show-vals')?.checked,
+      cutoff: document.getElementById('hm-cutoff')?.value || '0',
+      hm1Metric: document.getElementById('hm1-metric')?.value || 'count',
+      hm2Metric: document.getElementById('hm2-metric')?.value || 'hours',
+    },
+    rooms: {
+      search: document.getElementById('rooms-search')?.value || '',
+      sort: document.getElementById('rooms-sort')?.value || 'util-desc',
+      expandedKey: roomExpandedKey || null,
+    },
+    dayView: { currentDay: dvCurrentDay || '' },
+    rangeCompare: {
+      cutoff: document.getElementById('rc-cutoff')?.value || '0',
+      ranges: rangeCompare,
+    },
+  };
+}
+
+function restoreViewState(state) {
+  if (!state) return;
+  const f = state.filters || {};
+  if (document.getElementById('f-start')) document.getElementById('f-start').value = f.start || '';
+  if (document.getElementById('f-end')) document.getElementById('f-end').value = f.end || '';
+  setCheckedValues('f-buildings', f.buildings);
+  setCheckedValues('f-room-types', f.roomTypes);
+  setCheckedValues('f-statuses', f.statuses);
+  setCheckedValues('f-event-types', f.eventTypes);
+  if (document.getElementById('evt-search')) document.getElementById('evt-search').value = f.eventSearch || '';
+  filterEvtList();
+
+  const caps = f.capabilities || {};
+  const capMap = {
+    'cap-live': caps.live,
+    'cap-iso': caps.iso,
+    'cap-drums': caps.drums,
+    'cap-drums-stu': caps.drumsStudents,
+    'cap-surround': caps.surround,
+    'cap-atmos': caps.atmos,
+  };
+  Object.entries(capMap).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.checked = !!val; });
+
+  if (document.getElementById('overview-metric')) document.getElementById('overview-metric').value = state.overviewMetric || 'count';
+  if (document.getElementById('hm-show-vals')) document.getElementById('hm-show-vals').checked = !!state.heatmaps?.showValues;
+  if (document.getElementById('hm-cutoff')) document.getElementById('hm-cutoff').value = state.heatmaps?.cutoff || '0';
+  if (document.getElementById('hm1-metric')) document.getElementById('hm1-metric').value = state.heatmaps?.hm1Metric || 'count';
+  if (document.getElementById('hm2-metric')) document.getElementById('hm2-metric').value = state.heatmaps?.hm2Metric || 'hours';
+  onCutoffChange();
+
+  if (document.getElementById('rooms-search')) document.getElementById('rooms-search').value = state.rooms?.search || '';
+  const roomSort = state.rooms?.sort || 'util-desc';
+  if (document.getElementById('rooms-sort')) document.getElementById('rooms-sort').value = roomSort;
+  if (roomSort === 'util-desc') roomColSort = { col: 'util', dir: 'desc' };
+  else if (roomSort === 'util-asc') roomColSort = { col: 'util', dir: 'asc' };
+  else if (roomSort === 'bookings-desc') roomColSort = { col: 'bookings', dir: 'desc' };
+  else if (roomSort === 'alpha') roomColSort = { col: 'name', dir: 'asc' };
+  roomExpandedKey = state.rooms?.expandedKey || null;
+  if (state.dayView?.currentDay) dvCurrentDay = state.dayView.currentDay;
+
+  if (document.getElementById('rc-cutoff')) document.getElementById('rc-cutoff').value = state.rangeCompare?.cutoff || '0';
+  (state.rangeCompare?.ranges || []).forEach((r, i) => {
+    setRangeCompareSlotVisible(i, i < 2 || !!r.visible);
+    const c = document.getElementById(`rc-enabled-${i}`);
+    const l = document.getElementById(`rc-label-${i}`);
+    const s = document.getElementById(`rc-start-${i}`);
+    const e = document.getElementById(`rc-end-${i}`);
+    if (c) c.checked = r.enabled !== false;
+    if (l) l.value = r.label || `Range ${i + 1}`;
+    if (s) s.value = r.start || '';
+    if (e) e.value = r.end || '';
+  });
+  updateRangeCompareControls();
+
+  const targetTab = state.currentTab || currentTab || 'overview';
+  currentTab = targetTab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === targetTab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-'+targetTab));
+  applyFilters();
 }
 
 // =====================================================================
@@ -2059,70 +2218,42 @@ function handleSnapshotLoad(event) {
     try {
       const snap = JSON.parse(e.target.result);
       if (snap.version !== 1 || !snap.datasets) throw new Error('Invalid snapshot format');
-
-      let totalIncoming = 0;
-      snap.datasets.forEach(ds => {
-        // Reconstruct booking objects from compact snapshot rows
-        const snapDR = ds.dateRange
-          ? { min: new Date(ds.dateRange.min+'T00:00:00'), max: new Date(ds.dateRange.max+'T00:00:00') }
-          : null;
-        const semMon = snapDR ? getMondayOf(snapDR.min) : null;
-
-        const bookings = ds.rows.map(r => {
-          const startMin = r[1], endMin = r[2];
-          const calDay = parseDay(r[0]);
-          const bookingDay = new Date(calDay);
-          if (startMin < 360) bookingDay.setDate(bookingDay.getDate() - 1);
-          const durMin = (endMin <= startMin) ? (1440 - startMin + endMin) : (endMin - startMin);
-          const building = (r[3]||'').trim();
-          const room = (r[4]||'').trim();
-          const roomKey = building + '-' + room;
-          const wSemMon = semMon || getMondayOf(bookingDay);
-          const weekNum = Math.floor((bookingDay - wSemMon) / (7 * 86400000)) + 1;
-          return {
-            day: r[0], calDay, bookingDay, bookingDayStr: dateStr(bookingDay),
-            startMin, endMin, durHours: durMin/60, startHour: Math.floor(startMin/60),
-            building, room, roomKey, status: r[5], eventType: r[6], name: r[7], eventName: (r[8]||''),
-            meta: roomLookup[roomKey] || null, weekNum, dow: bookingDay.getDay()
-          };
-        });
-
-        const dateRange = snapDR || getDateRange(bookings);
-        totalIncoming += bookings.length;
-
-        // Always merge+dedup for snapshots — treat as historical record
-        const matchIdx = datasets.findIndex(d => dateRangesEqual(d.dateRange, dateRange));
-        if (matchIdx !== -1) {
-          // Merge into existing dataset for that range
-          const combined = [...datasets[matchIdx].bookings, ...bookings];
-          const { deduped } = deduplicateBookings(combined);
-          datasets[matchIdx] = { ...datasets[matchIdx], bookings: deduped, selected: ds.selected !== false };
-        } else {
-          datasets.push({ label: ds.label, bookings, dateRange, selected: ds.selected !== false });
-        }
-      });
-
-      // Rebuild allBookings from all datasets, fully deduped
-      const { deduped, removed } = deduplicateBookings(datasets.flatMap(d => d.bookings));
-      const firstLoad = allBookings.length === 0;
-      allBookings = deduped;
-      rebuildActiveBookings();
-
-      if (firstLoad) {
-        initDataView();
-      } else {
-        buildFilterUI();
-        applyFilters();
-        updateBadge();
-      }
-
-      const msg = removed > 0
-        ? `Loaded snapshot (${snap.datasets.length} dataset${snap.datasets.length===1?'':'s'}), removed ${removed} duplicate${removed===1?'':'s'}`
-        : `Loaded snapshot (${snap.datasets.length} dataset${snap.datasets.length===1?'':'s'}) — no duplicates found`;
-      showNotice(msg);
+      restoreSnapshotDatasets(snapshotDatasetsToAppDatasets(snap.datasets), snap.viewState || null, file.name);
+      showNotice(`Restored snapshot "${file.name}"`);
     } catch(err) { alert('Snapshot load error: ' + err.message); }
   };
   reader.readAsText(file);
+}
+
+function snapshotDatasetsToAppDatasets(snapDatasets) {
+  return snapDatasets.map(ds => {
+    const snapDR = ds.dateRange
+      ? { min: new Date(ds.dateRange.min+'T00:00:00'), max: new Date(ds.dateRange.max+'T00:00:00') }
+      : null;
+    const semMon = snapDR ? getMondayOf(snapDR.min) : null;
+    const { bookings, semMon: derivedSemMon } = processCompactRows(ds.rows || []);
+    const dateRange = snapDR || getDateRange(bookings);
+    return {
+      label: ds.label || (dateRange ? `${dateStr(dateRange.min)} → ${dateStr(dateRange.max)}` : 'Snapshot'),
+      bookings,
+      semMon: semMon || derivedSemMon,
+      dateRange,
+      selected: ds.selected !== false,
+    };
+  });
+}
+
+function restoreSnapshotDatasets(nextDatasets, viewState, name='snapshot') {
+  datasets = nextDatasets;
+  restoredSnapshotName = name;
+  rebuildActiveBookings();
+  document.getElementById('no-data').style.display = 'none';
+  document.getElementById('data-view').style.display = 'flex';
+  buildFilterUI();
+  if (viewState) restoreViewState(viewState);
+  else applyFilters();
+  updateBadge();
+  updateArchiveResetButton();
 }
 
 // =====================================================================
@@ -2132,6 +2263,7 @@ function exportSnapshot() {
   const snap={
     version:1,
     exportedAt:new Date().toISOString(),
+    viewState:captureViewState(),
     datasets:datasets.map(ds=>({
       label:ds.label,
       selected:isDatasetSelected(ds),
@@ -2549,6 +2681,7 @@ function scriptSafeJSON(value) {
 function getEmbeddedData(html) {
   const rowsMarker = 'const PREBAKED_ROWS = ';
   const labelMarker = '\nconst PREBAKED_LABEL = ';
+  const stateMarker = '\nconst PREBAKED_STATE = ';
   let from = 0;
 
   while (from < html.length) {
@@ -2563,9 +2696,14 @@ function getEmbeddedData(html) {
       if (rowsEnd !== -1 && rowsEnd > rowsStart && labelEnd !== -1) {
         const rowsJson = html.slice(rowsStart + rowsMarker.length, rowsEnd);
         const labelJson = html.slice(labelStart + labelMarker.length, labelEnd);
+        const stateStart = html.indexOf(stateMarker, labelEnd);
+        const stateEnd = stateStart !== -1 ? html.indexOf(';', stateStart + stateMarker.length) : -1;
         const rows = JSON.parse(rowsJson);
         const label = JSON.parse(labelJson);
-        if (Array.isArray(rows)) return { rows, label };
+        const state = stateStart !== -1 && stateEnd !== -1
+          ? JSON.parse(html.slice(stateStart + stateMarker.length, stateEnd))
+          : null;
+        if (Array.isArray(rows)) return { rows, label, state };
       }
     } catch(e) {}
 
@@ -2580,11 +2718,12 @@ function getEmbeddedRowsCount(html) {
   return embedded ? embedded.rows.length : -1;
 }
 
-function buildOfflineHTMLFromRows(compactRows, label) {
+function buildOfflineHTMLFromRows(compactRows, label, viewState=captureViewState()) {
   const dataBlock =
     `const ROOM_META = ${scriptSafeJSON(ROOM_META)};\n` +
     `const PREBAKED_ROWS = ${scriptSafeJSON(compactRows)};\n` +
-    `const PREBAKED_LABEL = ${scriptSafeJSON(label)};`;
+    `const PREBAKED_LABEL = ${scriptSafeJSON(label)};\n` +
+    `const PREBAKED_STATE = ${scriptSafeJSON(viewState)};`;
 
   const doc = document.documentElement.cloneNode(true);
   const scripts = doc.querySelectorAll('script');
@@ -2800,6 +2939,7 @@ async function autoLoadCloudSnapshots() {
     rebuildActiveBookings();
     if (allBookings.length) {
       initDataView();
+      rememberArchiveView();
       showNotice(`Loaded ${loaded.toLocaleString()} bookings from saved snapshots`);
     } else {
       setNoDataMessage('No data loaded', 'Saved snapshots were found, but no embedded booking data could be loaded.');
@@ -2893,24 +3033,16 @@ async function openSnapshot(name) {
 
     const embedded = getEmbeddedData(html);
     if (!embedded) throw new Error('Snapshot has no embedded data');
-    const { rows, label: snapLabel } = embedded;
-    const loadedCount = mergeEmbeddedSnapshot(name, rows, snapLabel, true);
-
-    const { deduped, removed } = deduplicateBookings(datasets.flatMap(d => d.bookings));
-    const firstLoad = allBookings.length === 0;
-    allBookings = deduped;
-    rebuildActiveBookings();
-
-    if (firstLoad) {
-      initDataView();
-    } else {
-      buildFilterUI();
-      applyFilters();
-      updateBadge();
-    }
-
-    const dupMsg = removed > 0 ? `, ${removed} duplicate${removed===1?'':'s'} removed` : '';
-    snapCloudMsg(`Loaded "${name}" (${loadedCount.toLocaleString()} bookings${dupMsg})`);
+    const { rows, label: snapLabel, state } = embedded;
+    const { bookings, semMon } = processCompactRows(rows);
+    restoreSnapshotDatasets([{
+      label: `${name} · ${snapLabel}`,
+      bookings,
+      semMon,
+      dateRange: getDateRange(bookings),
+      selected: true,
+    }], state, name);
+    snapCloudMsg(`Opened "${name}" (${bookings.length.toLocaleString()} bookings)`);
   } catch (e) {
     snapCloudMsg(`Load failed: ${e.message}`, true);
   }
