@@ -484,7 +484,7 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
           <label style="font-size:10px;color:var(--text3);">Charts show</label>
           <select class="inline" id="overview-metric" onchange="renderOverview()">
             <option value="count">Bookings</option>
-            <option value="hours">Hours</option>
+            <option value="hours" selected>Hours</option>
           </select>
         </div>
       </div>
@@ -532,7 +532,7 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
           <div><div class="section-title">Hourly Demand Heatmap</div><div class="section-sub">Day of week × hour of booking day (9am start). Times are EST/EDT.</div></div>
           <select class="inline" id="hm1-metric" onchange="renderHM1()">
             <option value="count">Booking count</option>
-            <option value="hours">Total hours</option>
+            <option value="hours" selected>Total hours</option>
           </select>
         </div>
         <div class="hm1-layout">
@@ -541,6 +541,18 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
             <div class="hm-legend" id="hm1-legend"></div>
           </div>
           <div class="hm1-late-panel" id="hm1-late-panel"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-hdr">
+          <div>
+            <div class="section-title">After-Hours Demand</div>
+            <div class="section-sub" id="hm3-sub">Bookings starting after cutoff, by building × day of week.</div>
+          </div>
+        </div>
+        <div class="hm1-layout">
+          <div><div class="heatmap-wrap" id="hm3"></div></div>
+          <div class="hm1-late-panel" id="hm3-late-panel"></div>
         </div>
       </div>
       <div class="card">
@@ -554,18 +566,6 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
         </div>
         <div class="week-hm-wrap" id="hm2"></div>
         <div class="hm-legend" id="hm2-legend"></div>
-      </div>
-      <div class="card">
-        <div class="section-hdr">
-          <div>
-            <div class="section-title">After-Hours Demand</div>
-            <div class="section-sub" id="hm3-sub">Bookings starting after cutoff, by building × day of week.</div>
-          </div>
-        </div>
-        <div class="hm1-layout">
-          <div><div class="heatmap-wrap" id="hm3"></div></div>
-          <div class="hm1-late-panel" id="hm3-late-panel"></div>
-        </div>
       </div>
     </div>
 
@@ -1122,10 +1122,10 @@ function restoreViewState(state) {
   };
   Object.entries(capMap).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.checked = !!val; });
 
-  if (document.getElementById('overview-metric')) document.getElementById('overview-metric').value = state.overviewMetric || 'count';
+  if (document.getElementById('overview-metric')) document.getElementById('overview-metric').value = state.overviewMetric || 'hours';
   if (document.getElementById('hm-show-vals')) document.getElementById('hm-show-vals').checked = !!state.heatmaps?.showValues;
   if (document.getElementById('hm-cutoff')) document.getElementById('hm-cutoff').value = state.heatmaps?.cutoff || '0';
-  if (document.getElementById('hm1-metric')) document.getElementById('hm1-metric').value = state.heatmaps?.hm1Metric || 'count';
+  if (document.getElementById('hm1-metric')) document.getElementById('hm1-metric').value = state.heatmaps?.hm1Metric || 'hours';
   if (document.getElementById('hm2-metric')) document.getElementById('hm2-metric').value = state.heatmaps?.hm2Metric || 'hours';
   onCutoffChange();
 
