@@ -420,6 +420,7 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
         <option value="">— Select Period —</option>
       </select>
       <button class="btn secondary" id="save-period-btn" style="margin-top:6px;font-size:11px;" onclick="saveCurrentPeriod()">Save Current Range</button>
+      <button class="btn secondary" id="reset-date-btn" style="margin-top:4px;font-size:11px;display:none;" onclick="resetDateRange()">Reset to All Data</button>
     </div>
 
     <div class="sb-section">
@@ -1348,6 +1349,16 @@ function updateSavePeriodButton() {
   const existing = savedPeriods.some(p => p.start === start && p.end === end);
   btn.disabled = !(start && end) || existing;
   btn.textContent = existing ? 'Range Saved' : 'Save Current Range';
+  const resetBtn = document.getElementById('reset-date-btn');
+  if (resetBtn) resetBtn.style.display = (start || end) ? '' : 'none';
+}
+
+function resetDateRange() {
+  document.getElementById('f-start').value = '';
+  document.getElementById('f-end').value = '';
+  document.getElementById('f-semester').value = '';
+  applyFilters();
+  updateSavePeriodButton();
 }
 
 function saveCurrentPeriod() {
