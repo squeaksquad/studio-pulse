@@ -243,6 +243,24 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
 .btn-snap-delete:hover { background: rgba(224,92,92,0.08) !important; border-color: var(--accent3) !important; }
 .snap-list-message { font-size: 11px; color: var(--text3); padding: 4px 0; }
 .snap-list-message.error { color: var(--accent3); }
+.compare-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dataset-check { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; }
+.dataset-row-muted td { color: var(--text3); opacity: 0.72; }
+.dataset-row-muted td:first-child { color: var(--text3) !important; }
+.browse-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr); gap: 14px; align-items: start; }
+.browse-grid .card { height: 100%; }
+@media (max-width: 1000px) { .browse-grid { grid-template-columns: 1fr; } }
+.range-compare-controls { display: grid; grid-template-columns: repeat(3, minmax(190px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.range-compare-box { border: 1px solid var(--border); border-radius: 6px; padding: 10px; background: rgba(79,142,247,0.03); }
+.range-compare-box.inactive { opacity: 0.62; }
+.range-compare-box .range-title { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; }
+.range-compare-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.range-compare-head label { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; cursor: pointer; }
+.range-compare-head input[type=checkbox] { accent-color: var(--accent); width: 12px; height: 12px; cursor: pointer; }
+.range-compare-box input[type=text] { margin-bottom: 6px; font-size: 11px; padding: 5px 7px; }
+.range-compare-box input[type=date] { margin-bottom: 6px; }
+.range-compare-empty { font-size: 11px; color: var(--text3); padding: 6px 0; }
+@media (max-width: 1100px) { .range-compare-controls { grid-template-columns: 1fr; } }
 
 /* Chart containers */
 .chart-svg-wrap { width: 100%; overflow: visible; }
@@ -374,7 +392,7 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
       <div class="snap-msg" id="snap-cloud-msg" style="display:none;"></div>
     </div>
     <div style="flex:2;min-width:300px;">
-      <div id="snap-cloud-list"></div>
+      <div id="snap-cloud-list" class="snap-cloud-list"></div>
     </div>
   </div>
 </div>
@@ -398,12 +416,13 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
     <div class="sb-section">
       <div class="sb-label">Date Range</div>
       <div class="date-range">
-        <input type="date" id="f-start" onchange="applyFilters()">
-        <input type="date" id="f-end" onchange="applyFilters()">
+        <input type="date" id="f-start" onchange="onDateRangeChange()">
+        <input type="date" id="f-end" onchange="onDateRangeChange()">
       </div>
       <select id="f-semester" onchange="applySemesterPreset()">
         <option value="">— Select Period —</option>
       </select>
+      <button class="btn secondary" id="save-period-btn" style="margin-top:6px;font-size:11px;" onclick="saveCurrentPeriod()">Save Current Range</button>
     </div>
 
     <div class="sb-section">
@@ -457,29 +476,38 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
       <div class="tab" data-tab="rooms">Rooms</div>
       <div class="tab" data-tab="trends">Trends</div>
       <div class="tab" data-tab="dayview">Day View</div>
-      <div class="tab" data-tab="history">History</div>
+      <div class="tab" data-tab="history">Browse/Compare</div>
     </div>
 
     <!-- OVERVIEW -->
     <div class="tab-panel active" id="tab-overview">
+      <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:-8px;">
+        <div class="hm-controls" style="gap:5px;">
+          <label style="font-size:10px;color:var(--text3);">Charts show</label>
+          <select class="inline" id="overview-metric" onchange="renderOverview()">
+            <option value="count">Bookings</option>
+            <option value="hours">Hours</option>
+          </select>
+        </div>
+      </div>
       <div class="stat-grid" id="stat-grid"></div>
       <div class="two-col">
         <div class="card">
-          <div class="section-hdr"><div><div class="section-title">Top Rooms by Bookings</div><div class="section-sub">Filtered period</div></div></div>
+          <div class="section-hdr"><div><div class="section-title" id="overview-rooms-title">Top Rooms by Bookings</div><div class="section-sub">Filtered period</div></div></div>
           <div class="bar-chart" id="chart-top-rooms"></div>
         </div>
         <div class="card">
-          <div class="section-hdr"><div><div class="section-title">Bookings by Event Type</div><div class="section-sub">Top 10</div></div></div>
+          <div class="section-hdr"><div><div class="section-title" id="overview-events-title">Bookings by Event Type</div><div class="section-sub">Top 10</div></div></div>
           <div class="bar-chart" id="chart-event-types"></div>
         </div>
       </div>
       <div class="two-col">
         <div class="card">
-          <div class="section-hdr"><div><div class="section-title">Bookings by Building</div></div></div>
+          <div class="section-hdr"><div><div class="section-title" id="overview-buildings-title">Bookings by Building</div></div></div>
           <div class="bar-chart" id="chart-buildings"></div>
         </div>
         <div class="card">
-          <div class="section-hdr"><div><div class="section-title">Bookings by Status</div></div></div>
+          <div class="section-hdr"><div><div class="section-title" id="overview-statuses-title">Bookings by Status</div></div></div>
           <div class="bar-chart" id="chart-statuses"></div>
         </div>
       </div>
@@ -619,16 +647,80 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
       </div>
     </div>
 
-    <!-- HISTORY -->
+    <!-- BROWSE / COMPARE -->
     <div class="tab-panel" id="tab-history">
-      <div class="card">
-        <div class="section-hdr"><div><div class="section-title">Loaded Datasets</div><div class="section-sub">Load additional semesters to enable comparisons.</div></div></div>
-        <div id="history-datasets"></div>
-        <button class="btn secondary" style="width:auto;margin-top:12px;font-size:11px;" onclick="document.getElementById('snap-file').click()">+ Load Snapshot / CSV</button>
+      <div class="browse-grid">
+        <div class="card">
+          <div class="section-hdr">
+            <div>
+              <div class="section-title">Loaded Datasets</div>
+              <div class="section-sub">Check datasets to include them in live views and comparisons.</div>
+            </div>
+            <div class="compare-toolbar">
+              <button class="btn secondary" style="width:auto;font-size:11px;" onclick="setAllDatasetsSelected(true)">Select All</button>
+              <button class="btn secondary" style="width:auto;font-size:11px;" onclick="setAllDatasetsSelected(false)">Clear</button>
+            </div>
+          </div>
+          <div id="history-datasets"></div>
+          <button class="btn secondary" style="width:auto;margin-top:12px;font-size:11px;" onclick="document.getElementById('browse-load-file').click()">+ Load Snapshot / CSV</button>
+          <input type="file" id="browse-load-file" accept=".json,.csv" onchange="handleBrowseDatasetLoad(event)">
+        </div>
+        <div class="card">
+          <div class="section-hdr">
+            <div>
+              <div class="section-title">Browse Saved Snapshots</div>
+              <div class="section-sub">Open a saved snapshot to add it to the loaded dataset list.</div>
+            </div>
+            <button class="btn secondary" style="width:auto;font-size:11px;" onclick="listCloudSnapshots()">Refresh</button>
+          </div>
+          <div class="snap-cloud-list"></div>
+        </div>
       </div>
       <div class="card" id="compare-card" style="display:none;">
-        <div class="section-hdr"><div><div class="section-title">Semester Comparison</div></div></div>
+        <div class="section-hdr"><div><div class="section-title">Selected Comparison</div></div></div>
         <div id="compare-content"></div>
+      </div>
+      <div class="card">
+        <div class="section-hdr">
+          <div>
+            <div class="section-title">Date Range Comparison</div>
+            <div class="section-sub">Compare checked windows from the currently selected datasets.</div>
+          </div>
+          <div class="hm-controls" style="gap:8px;">
+            <label style="font-size:10px;color:var(--text3);">After-midnight cutoff</label>
+            <select class="inline" id="rc-cutoff" onchange="renderRangeComparison()">
+              <option value="1320">10pm</option>
+              <option value="1380">11pm</option>
+              <option value="0" selected>12am</option>
+              <option value="60">1am</option>
+              <option value="120">2am</option>
+              <option value="180">3am</option>
+            </select>
+            <button class="btn secondary" style="width:auto;font-size:11px;" onclick="seedRangeCompareFromCurrent()">Use Current Range</button>
+            <button class="btn secondary" id="rc-add-btn" style="width:auto;font-size:11px;" onclick="addRangeCompareRange()">+ Add Range</button>
+          </div>
+        </div>
+        <div class="range-compare-controls">
+          <div class="range-compare-box">
+            <div class="range-compare-head"><label><input type="checkbox" id="rc-enabled-0" checked onchange="onRangeCompareToggle(0)"> Range 1</label></div>
+            <input type="text" id="rc-label-0" placeholder="Label" value="Range 1" oninput="renderRangeComparison()">
+            <input type="date" id="rc-start-0" onchange="renderRangeComparison()">
+            <input type="date" id="rc-end-0" onchange="renderRangeComparison()">
+          </div>
+          <div class="range-compare-box">
+            <div class="range-compare-head"><label><input type="checkbox" id="rc-enabled-1" checked onchange="onRangeCompareToggle(1)"> Range 2</label></div>
+            <input type="text" id="rc-label-1" placeholder="Label" value="Range 2" oninput="renderRangeComparison()">
+            <input type="date" id="rc-start-1" onchange="renderRangeComparison()">
+            <input type="date" id="rc-end-1" onchange="renderRangeComparison()">
+          </div>
+          <div class="range-compare-box" id="rc-box-2" style="display:none;">
+            <div class="range-compare-head"><label><input type="checkbox" id="rc-enabled-2" onchange="onRangeCompareToggle(2)"> Range 3</label></div>
+            <input type="text" id="rc-label-2" placeholder="Label (optional)" value="Range 3" oninput="renderRangeComparison()">
+            <input type="date" id="rc-start-2" onchange="renderRangeComparison()">
+            <input type="date" id="rc-end-2" onchange="renderRangeComparison()">
+          </div>
+        </div>
+        <div id="range-compare-content"></div>
       </div>
     </div>
     </div><!-- /data-view -->
@@ -675,8 +767,23 @@ ROOM_META.forEach(r => {
 let allBookings = [];
 let filteredBookings = [];
 let datasets = [];
+let savedPeriods = [];
 let currentTab = 'overview';
 let semesterMonday = null; // global for current primary dataset
+
+function isDatasetSelected(ds) {
+  return ds?.selected !== false;
+}
+
+function getSelectedDatasets() {
+  return datasets.filter(isDatasetSelected);
+}
+
+function rebuildActiveBookings() {
+  const { deduped } = deduplicateBookings(getSelectedDatasets().flatMap(ds => ds.bookings));
+  allBookings = deduped;
+  return allBookings;
+}
 
 // =====================================================================
 // DST-AWARE DISPLAY NOTE
@@ -785,24 +892,41 @@ function processBookings(csvRows) {
 // INIT
 // =====================================================================
 window.addEventListener('DOMContentLoaded', () => {
+  savedPeriods = loadSavedPeriods();
+
   if (PREBAKED_ROWS) {
     // Prebaked data present — rows are compact format [day, startMin, endMin, building, room, status, eventType, name, eventName]
     const { bookings, semMon } = processCompactRows(PREBAKED_ROWS);
     semesterMonday = semMon;
     allBookings = bookings;
-    datasets = [{ label: PREBAKED_LABEL, bookings, semMon, dateRange: getDateRange(bookings) }];
+    datasets = [{ label: PREBAKED_LABEL, bookings, semMon, dateRange: getDateRange(bookings), selected: true }];
     initDataView();
   } else {
-    // No data — show upload prompt
+    // No embedded data — hydrate from saved cloud snapshots when possible.
     document.getElementById('no-data').style.display = 'flex';
     document.getElementById('data-view').style.display = 'none';
+    setNoDataMessage('Loading saved snapshots', 'Checking the saved snapshot archive for historical data.');
+    autoLoadCloudSnapshots();
   }
 
   // Tab clicks always wired up
   document.querySelectorAll('.tab').forEach(t => {
-    t.addEventListener('click', () => { if (allBookings.length) switchTab(t.dataset.tab); });
+    t.addEventListener('click', () => { if (allBookings.length || datasets.length) switchTab(t.dataset.tab); });
   });
 });
+
+function setNoDataMessage(title, sub) {
+  const box = document.getElementById('no-data');
+  if (!box) return;
+  const titleEl = box.querySelector('div[style*="font-size:15px"]');
+  const subEl = box.querySelector('div[style*="max-width:280px"]');
+  if (titleEl) titleEl.textContent = title;
+  if (subEl) subEl.textContent = sub;
+}
+
+function isLocalPreview() {
+  return ['127.0.0.1', 'localhost', '::1'].includes(location.hostname);
+}
 
 // Process compact rows [day, startMin, endMin, building, room, status, eventType, name, eventName]
 // Used by prebaked/offline data — bypasses string time parsing.
@@ -851,6 +975,54 @@ function getDateRange(bks) {
   let min = bks[0].bookingDay, max = bks[0].bookingDay;
   bks.forEach(b => { if (b.bookingDay < min) min = b.bookingDay; if (b.bookingDay > max) max = b.bookingDay; });
   return { min, max };
+}
+
+function bookingText(b) {
+  return [b.eventName, b.eventType, b.name, b.status].filter(Boolean).join(' ').toLowerCase();
+}
+
+function isTechClosedBooking(b) {
+  const t = bookingText(b);
+  return t.includes('tech time') && t.includes('closed');
+}
+
+function isUnavailableClosedBooking(b) {
+  if (isTechClosedBooking(b)) return false;
+  const eventName = (b.eventName || '').trim().toLowerCase();
+  const name = (b.name || '').trim().toLowerCase();
+  const eventType = (b.eventType || '').trim().toLowerCase();
+  return eventName === 'closed' || name === 'closed' || (eventType === 'room off line' && bookingText(b).includes('closed'));
+}
+
+function isCountedBooking(b) {
+  return !isUnavailableClosedBooking(b);
+}
+
+function bookedHours(b) {
+  return (isUnavailableClosedBooking(b) || isTechClosedBooking(b)) ? 0 : b.durHours;
+}
+
+function analyticsBookings(bookings) {
+  return bookings.filter(isCountedBooking);
+}
+
+function analyticsEventType(b) {
+  return isTechClosedBooking(b) ? 'Tech Time - Studios Closed' : (b.eventType || 'Unknown');
+}
+
+function loadSavedPeriods() {
+  try {
+    const raw = localStorage.getItem('sp-saved-periods');
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(p => p && p.label && p.start && p.end);
+  } catch(e) {
+    return [];
+  }
+}
+
+function persistSavedPeriods() {
+  try { localStorage.setItem('sp-saved-periods', JSON.stringify(savedPeriods)); } catch(e) {}
 }
 
 // =====================================================================
@@ -907,16 +1079,34 @@ function buildFilterUI() {
   if (dr) {
     document.getElementById('f-start').value = dateStr(dr.min);
     document.getElementById('f-end').value = dateStr(dr.max);
+  } else {
+    document.getElementById('f-start').value = '';
+    document.getElementById('f-end').value = '';
   }
 
   // Semester selector
   const sel = document.getElementById('f-semester');
   sel.innerHTML = '<option value="">— Select Period —</option>';
+  if (savedPeriods.length) {
+    const group = document.createElement('optgroup');
+    group.label = 'Saved Periods';
+    savedPeriods.forEach((p,i) => {
+      const o = document.createElement('option');
+      o.value = 'period:' + i;
+      o.textContent = p.label;
+      group.appendChild(o);
+    });
+    sel.appendChild(group);
+  }
+  const dsGroup = document.createElement('optgroup');
+  dsGroup.label = 'Loaded Datasets';
   datasets.forEach((ds,i) => {
     const o = document.createElement('option');
-    o.value = i; o.textContent = ds.label;
-    sel.appendChild(o);
+    o.value = 'dataset:' + i; o.textContent = ds.label;
+    dsGroup.appendChild(o);
   });
+  sel.appendChild(dsGroup);
+  updateSavePeriodButton();
 }
 
 function soloFilter(groupId, value) {
@@ -978,19 +1168,68 @@ function applyFilters() {
     return true;
   });
 
-  document.getElementById('booking-count').textContent = filteredBookings.length.toLocaleString() + ' bookings';
+  document.getElementById('booking-count').textContent = analyticsBookings(filteredBookings).length.toLocaleString() + ' bookings';
+  updateSavePeriodButton();
   renderCurrentTab();
 }
 
 function applySemesterPreset() {
   const v = document.getElementById('f-semester').value;
   if (v === '') return;
-  const ds = datasets[+v];
+  if (v.startsWith('period:')) {
+    const p = savedPeriods[+v.split(':')[1]];
+    if (p) {
+      document.getElementById('f-start').value = p.start;
+      document.getElementById('f-end').value   = p.end;
+      applyFilters();
+    }
+    return;
+  }
+  const idx = v.startsWith('dataset:') ? +v.split(':')[1] : +v;
+  const ds = datasets[idx];
   if (ds?.dateRange) {
     document.getElementById('f-start').value = dateStr(ds.dateRange.min);
     document.getElementById('f-end').value   = dateStr(ds.dateRange.max);
     applyFilters();
   }
+}
+
+function onDateRangeChange() {
+  document.getElementById('f-semester').value = '';
+  applyFilters();
+}
+
+function updateSavePeriodButton() {
+  const btn = document.getElementById('save-period-btn');
+  if (!btn) return;
+  const start = document.getElementById('f-start').value;
+  const end = document.getElementById('f-end').value;
+  const existing = savedPeriods.some(p => p.start === start && p.end === end);
+  btn.disabled = !(start && end) || existing;
+  btn.textContent = existing ? 'Range Saved' : 'Save Current Range';
+}
+
+function saveCurrentPeriod() {
+  const start = document.getElementById('f-start').value;
+  const end = document.getElementById('f-end').value;
+  if (!start || !end) return;
+  const suggested = `${start} to ${end}`;
+  const label = prompt('Name this period', suggested);
+  if (!label) return;
+  const clean = label.trim();
+  if (!clean) return;
+  const existingIdx = savedPeriods.findIndex(p => p.start === start && p.end === end);
+  const period = { label: clean, start, end };
+  if (existingIdx !== -1) savedPeriods[existingIdx] = period;
+  else savedPeriods.push(period);
+  persistSavedPeriods();
+  buildFilterUI();
+  document.getElementById('f-start').value = start;
+  document.getElementById('f-end').value = end;
+  const idx = savedPeriods.findIndex(p => p.start === start && p.end === end && p.label === clean);
+  document.getElementById('f-semester').value = 'period:' + idx;
+  applyFilters();
+  showNotice(`Saved period "${clean}"`);
 }
 
 function clearFilters() {
@@ -1002,6 +1241,9 @@ function clearFilters() {
   if (dr) {
     document.getElementById('f-start').value = dateStr(dr.min);
     document.getElementById('f-end').value   = dateStr(dr.max);
+  } else {
+    document.getElementById('f-start').value = '';
+    document.getElementById('f-end').value   = '';
   }
   applyFilters();
 }
@@ -1032,8 +1274,9 @@ function renderCurrentTab() {
 // OVERVIEW
 // =====================================================================
 function renderOverview() {
-  const b = filteredBookings;
-  const totalH = b.reduce((s,x)=>s+x.durHours, 0);
+  const b = analyticsBookings(filteredBookings);
+  const metric = document.getElementById('overview-metric')?.value || 'count';
+  const totalH = b.reduce((s,x)=>s+bookedHours(x), 0);
   const uRooms = new Set(b.map(x=>x.roomKey)).size;
   const uDays  = new Set(b.map(x=>x.bookingDayStr)).size;
   const after  = b.filter(x=>x.startHour<6).length;
@@ -1053,20 +1296,26 @@ function renderOverview() {
   ).join('');
 
   // Charts
-  const byRoom = countBy(b, x=>x.roomKey);
-  const topRooms = topN(byRoom, 10);
-  renderBarChart('chart-top-rooms', topRooms.map(([k,v])=>({label:roomLookup[k]?.name||k, val:v, color:'#4f8ef7'})), true);
+  document.getElementById('overview-rooms-title').textContent = metric === 'hours' ? 'Top Rooms by Hours' : 'Top Rooms by Bookings';
+  document.getElementById('overview-events-title').textContent = metric === 'hours' ? 'Hours by Event Type' : 'Bookings by Event Type';
+  document.getElementById('overview-buildings-title').textContent = metric === 'hours' ? 'Hours by Building' : 'Bookings by Building';
+  document.getElementById('overview-statuses-title').textContent = metric === 'hours' ? 'Hours by Status' : 'Bookings by Status';
 
-  const byEvt = countBy(b, x=>x.eventType);
-  renderBarChart('chart-event-types', topN(byEvt,10).map(([k,v])=>({label:k,val:v,color:'#7b5ea7'})), true);
+  const valueFor = x => metric === 'hours' ? bookedHours(x) : 1;
+  const byRoom = sumBy(b, x=>x.roomKey, valueFor);
+  const topRooms = topN(byRoom, 10);
+  renderBarChart('chart-top-rooms', topRooms.map(([k,v])=>({label:roomLookup[k]?.name||k, val:v, color:'#4f8ef7'})), true, metric);
+
+  const byEvt = sumBy(b, analyticsEventType, valueFor);
+  renderBarChart('chart-event-types', topN(byEvt,10).map(([k,v])=>({label:k,val:v,color:'#7b5ea7'})), true, metric);
 
   const BLDG = {'136':'Bldg 136','150':'Bldg 150','160':'Bldg 160','1108':'1108','921':'921'};
-  const byBld = countBy(b, x=>x.building);
-  renderBarChart('chart-buildings', topN(byBld,10).map(([k,v])=>({label:BLDG[k]||k,val:v,color:'#4abf8a'})), true);
+  const byBld = sumBy(b, x=>x.building, valueFor);
+  renderBarChart('chart-buildings', topN(byBld,10).map(([k,v])=>({label:BLDG[k]||k,val:v,color:'#4abf8a'})), true, metric);
 
   const STAT_CLR = {'Confirmed':'#4abf8a','Confirmed - Web':'#4f8ef7','Academic Confirmed':'#7b5ea7','Checked-In':'#e0a85c','Checked-Out':'#e05c5c','Late':'#e05c5c'};
-  const byStat = countBy(b, x=>x.status);
-  renderBarChart('chart-statuses', topN(byStat,10).map(([k,v])=>({label:k,val:v,color:STAT_CLR[k]||'#525c72'})), true);
+  const byStat = sumBy(b, x=>x.status, valueFor);
+  renderBarChart('chart-statuses', topN(byStat,10).map(([k,v])=>({label:k,val:v,color:STAT_CLR[k]||'#525c72'})), true, metric);
 }
 
 function countBy(arr, fn) {
@@ -1074,19 +1323,28 @@ function countBy(arr, fn) {
   arr.forEach(x => { const k=fn(x); m[k]=(m[k]||0)+1; });
   return m;
 }
+function sumBy(arr, keyFn, valFn) {
+  const m = {};
+  arr.forEach(x => {
+    const k = keyFn(x);
+    m[k] = (m[k] || 0) + valFn(x);
+  });
+  return m;
+}
 function topN(obj, n) {
   return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,n);
 }
 
-function renderBarChart(id, data, showPct=false) {
+function renderBarChart(id, data, showPct=false, metric='count') {
   const max = data.reduce((m,d)=>Math.max(m,d.val),1);
   const total = showPct ? data.reduce((s,d)=>s+d.val,0) : 0;
   document.getElementById(id).innerHTML = data.map(d => {
     const pct = showPct && total>0 ? ` <span style="color:var(--text3)">${(d.val/total*100).toFixed(1)}%</span>` : '';
+    const val = metric === 'hours' ? (+d.val.toFixed(0)).toLocaleString() + 'h' : Math.round(d.val).toLocaleString();
     return `<div class="bar-row">
       <div class="bar-label" title="${d.label}">${d.label}</div>
       <div class="bar-track"><div class="bar-fill" style="width:${Math.round(d.val/max*100)}%;background:${d.color}"></div></div>
-      <div class="bar-val" style="width:70px;">${d.val.toLocaleString()}${pct}</div>
+      <div class="bar-val" style="width:70px;">${val}${pct}</div>
     </div>`;
   }).join('');
 }
@@ -1128,7 +1386,7 @@ function makeLegend(containerId) {
 function renderHM1() {
   const metric = document.getElementById('hm1-metric').value;
   const showVals = document.getElementById('hm-show-vals')?.checked || false;
-  const b = filteredBookings;
+  const b = analyticsBookings(filteredBookings);
   const HOURS = [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5];
   const DAYS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const HLBL  = h => h===0?'12a':h<12?h+'a':h===12?'12p':(h-12)+'p';
@@ -1137,7 +1395,7 @@ function renderHM1() {
   const mat = Array.from({length:7},()=>Object.fromEntries(HOURS.map(h=>[h,{c:0,h:0}])));
   b.forEach(x => {
     const cell = mat[x.dow]?.[x.startHour];
-    if (cell) { cell.c++; cell.h += x.durHours; }
+    if (cell) { cell.c++; cell.h += bookedHours(x); }
   });
 
   let maxV = 0;
@@ -1170,7 +1428,7 @@ function renderHM1() {
 function renderHM2() {
   const metric = document.getElementById('hm2-metric').value;
   const showVals = document.getElementById('hm-show-vals')?.checked || false;
-  const b = filteredBookings;
+  const b = analyticsBookings(filteredBookings);
   const AVAIL_PER_WEEK = 21 * 7; // 147h
 
   const weeks = [...new Set(b.map(x=>x.weekNum))].sort((a,z)=>a-z);
@@ -1180,7 +1438,7 @@ function renderHM2() {
   roomKeys.forEach(k => { mat[k] = {}; weeks.forEach(w => mat[k][w]={c:0,h:0}); });
   b.forEach(x => {
     const cell = mat[x.roomKey]?.[x.weekNum];
-    if (cell) { cell.c++; cell.h += x.durHours; }
+    if (cell) { cell.c++; cell.h += bookedHours(x); }
   });
 
   let maxV = 0;
@@ -1237,7 +1495,8 @@ function onCutoffChange() {
 function renderHM3() {
   const cutoff = getCutoffMin();
   const showVals = document.getElementById('hm-show-vals')?.checked || false;
-  const b = filteredBookings.filter(x => isAfterCutoff(x.startMin, cutoff));
+  const counted = analyticsBookings(filteredBookings);
+  const b = counted.filter(x => isAfterCutoff(x.startMin, cutoff));
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const BLDG = {'136':'Bldg 136','150':'Bldg 150','160A':'160 \u00b7 A Level','160B':'160 \u00b7 B Level','1108':'1108','921':'Bldg 921'};
   const blds = [...new Set(b.map(x=>dvBuilding(x)))].sort((a,b) => parseInt(a)-parseInt(b) || a.localeCompare(b));
@@ -1248,7 +1507,7 @@ function renderHM3() {
   }
   const matC={},matH={};
   blds.forEach(bld=>{matC[bld]=Array(7).fill(0);matH[bld]=Array(7).fill(0);});
-  b.forEach(x=>{const bk=dvBuilding(x);if(matC[bk]){matC[bk][x.dow]++;matH[bk][x.dow]+=x.durHours;}});
+  b.forEach(x=>{const bk=dvBuilding(x);if(matC[bk]){matC[bk][x.dow]++;matH[bk][x.dow]+=bookedHours(x);}});
   let maxV=0;
   blds.forEach(bld=>matC[bld].forEach(v=>{if(v>maxV)maxV=v;}));
   let html='<table class="heatmap-table"><thead><tr><th></th>';
@@ -1267,7 +1526,7 @@ function renderHM3() {
   });
   html+='</tbody></table>';
   document.getElementById('hm3').innerHTML=html;
-  const totalAll=filteredBookings.length;
+  const totalAll=counted.length;
   let ph=`<div class="section-sub">After ${cutoffLabel(cutoff)} \u00b7 by building</div>`;
   ph+='<table class="late-table"><thead><tr><th>Building</th><th class="num">Bookings</th><th class="num">Hours</th><th class="num">% of total</th></tr></thead><tbody>';
   let tC=0,tH=0;
@@ -1291,7 +1550,7 @@ function renderLateNightPanel(mat, DAYS, allFiltered) {
   const AH = [];
   if (cutoff >= 1320) { for(let h=Math.floor(cutoff/60);h<24;h++)AH.push(h); for(let h=0;h<=5;h++)AH.push(h); }
   else { for(let h=Math.max(0,Math.floor(cutoff/60));h<=5;h++)AH.push(h); }
-  const tAll=allFiltered.length, tHAll=allFiltered.reduce((s,x)=>s+x.durHours,0);
+  const tAll=allFiltered.length, tHAll=allFiltered.reduce((s,x)=>s+bookedHours(x),0);
   let html=`<div class="section-sub">After ${cutLbl} \u00b7 by day of week</div>`;
   html+='<table class="late-table"><thead><tr><th>Day</th><th class="num">Bookings</th><th class="num">Hours</th><th class="num">% bkgs</th><th class="num">% hrs</th></tr></thead><tbody>';
   let tC=0,tH=0;
@@ -1329,9 +1588,9 @@ function roomSortCol(col) {
 // TRENDS (SVG charts)
 // =====================================================================
 function renderTrends() {
-  const b = filteredBookings;
+  const b = analyticsBookings(filteredBookings);
   const byWeek = {}, byWeekH = {};
-  b.forEach(x => { byWeek[x.weekNum]=(byWeek[x.weekNum]||0)+1; byWeekH[x.weekNum]=(byWeekH[x.weekNum]||0)+x.durHours; });
+  b.forEach(x => { byWeek[x.weekNum]=(byWeek[x.weekNum]||0)+1; byWeekH[x.weekNum]=(byWeekH[x.weekNum]||0)+bookedHours(x); });
   const weeks = Object.keys(byWeek).map(Number).sort((a,z)=>a-z);
 
   svgBar('chart-weekly', weeks.map(w=>`W${w}`), weeks.map(w=>byWeek[w]), '#4f8ef7', 160);
@@ -1341,16 +1600,16 @@ function renderTrends() {
   const TYPE_CLR = {'Studio':'#4f8ef7','Production Suite':'#7b5ea7','Edit Suite':'#4abf8a','Other':'#525c72'};
   const typeW = {};
   TYPES.forEach(t => { typeW[t]={}; weeks.forEach(w=>typeW[t][w]=0); });
-  b.forEach(x => { if(x.meta&&typeW[x.meta.type]) typeW[x.meta.type][x.weekNum]=(typeW[x.meta.type][x.weekNum]||0)+x.durHours; });
+  b.forEach(x => { if(x.meta&&typeW[x.meta.type]) typeW[x.meta.type][x.weekNum]=(typeW[x.meta.type][x.weekNum]||0)+bookedHours(x); });
   svgStacked('chart-type-trend', weeks.map(w=>`W${w}`), TYPES.map(t=>({label:t,color:TYPE_CLR[t]||'#525c72',vals:weeks.map(w=>typeW[t][w]||0)})), 150);
 
   // Top 5 event types stacked
-  const evtCounts = countBy(b,x=>x.eventType);
+  const evtCounts = countBy(b,analyticsEventType);
   const top5evts = topN(evtCounts,5).map(([k])=>k);
   const EVT_CLR = ['#4f8ef7','#7b5ea7','#4abf8a','#e0a85c','#e05c5c'];
   const evtW = {};
   top5evts.forEach(e=>{evtW[e]={};weeks.forEach(w=>evtW[e][w]=0);});
-  b.forEach(x=>{ if(evtW[x.eventType]) evtW[x.eventType][x.weekNum]=(evtW[x.eventType][x.weekNum]||0)+1; });
+  b.forEach(x=>{ const evt=analyticsEventType(x); if(evtW[evt]) evtW[evt][x.weekNum]=(evtW[evt][x.weekNum]||0)+1; });
   svgStacked('chart-evt-trend', weeks.map(w=>`W${w}`), top5evts.map((e,i)=>({label:e.length>16?e.slice(0,14)+'…':e,color:EVT_CLR[i],vals:weeks.map(w=>evtW[e][w]||0)})), 150);
 
   // Daily dist
@@ -1425,32 +1684,222 @@ function svgStacked(id, labels, series, h) {
 // =====================================================================
 function renderHistory() {
   const list = document.getElementById('history-datasets');
-  list.innerHTML = '<table class="data-table"><thead><tr><th>Dataset</th><th>Date Range</th><th>Bookings</th><th>Rooms</th><th>Hours</th></tr></thead><tbody>'+
+  if (!list) return;
+  if (!cloudSnapshots.length && !renderHistory._snapRequested) {
+    renderHistory._snapRequested = true;
+    renderSnapListMessage('Loading saved snapshots...');
+    listCloudSnapshots();
+  }
+
+  list.innerHTML = '<table class="data-table"><thead><tr><th>View</th><th>Dataset</th><th>Date Range</th><th>Bookings</th><th>Rooms</th><th>Hours</th></tr></thead><tbody>'+
     datasets.map((ds,i)=>{
       const dr=ds.dateRange;
-      const h=ds.bookings.reduce((s,b)=>s+b.durHours,0);
-      const r=new Set(ds.bookings.map(b=>b.roomKey)).size;
-      return `<tr><td style="color:var(--text)">${ds.label}</td><td>${dr?dateStr(dr.min)+' → '+dateStr(dr.max):'—'}</td><td>${ds.bookings.length.toLocaleString()}</td><td>${r.toLocaleString()}</td><td>${(+h.toFixed(0)).toLocaleString()}h</td></tr>`;
+      const counted = analyticsBookings(ds.bookings);
+      const h=counted.reduce((s,b)=>s+bookedHours(b),0);
+      const r=new Set(counted.map(b=>b.roomKey)).size;
+      const checked = isDatasetSelected(ds);
+      return `<tr class="${checked?'':'dataset-row-muted'}">
+        <td><input class="dataset-check" type="checkbox" ${checked?'checked':''} onchange="toggleDatasetSelection(${i}, this.checked)"></td>
+        <td style="color:var(--text)">${escHtml(ds.label)}</td>
+        <td>${dr?dateStr(dr.min)+' → '+dateStr(dr.max):'—'}</td>
+        <td>${counted.length.toLocaleString()}</td>
+        <td>${r.toLocaleString()}</td>
+        <td>${(+h.toFixed(0)).toLocaleString()}h</td>
+      </tr>`;
     }).join('')+'</tbody></table>';
 
   const card=document.getElementById('compare-card');
   const content=document.getElementById('compare-content');
-  if(datasets.length<2){card.style.display='none';return;}
-  card.style.display='block';
-  const metrics=datasets.map(ds=>({
-    label:ds.label,
-    total:ds.bookings.length,
-    hours:ds.bookings.reduce((s,b)=>s+b.durHours,0),
-    rooms:new Set(ds.bookings.map(b=>b.roomKey)).size,
-    after:ds.bookings.filter(b=>b.startHour<6).length,
-  }));
-  const mxT=Math.max(...metrics.map(m=>m.total));
-  const mxH=Math.max(...metrics.map(m=>m.hours));
-  const CLR=['#4f8ef7','#7b5ea7','#4abf8a','#e0a85c'];
-  content.innerHTML=`<div class="two-col" style="margin-top:8px;">
-    <div><div class="section-sub" style="margin-bottom:8px;">Total Bookings</div>${metrics.map((m,i)=>`<div class="bar-row"><div class="bar-label" title="${m.label}">${m.label}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(m.total/mxT*100)}%;background:${CLR[i%4]}"></div></div><div class="bar-val">${m.total.toLocaleString()}</div></div>`).join('')}</div>
-    <div><div class="section-sub" style="margin-bottom:8px;">Total Hours</div>${metrics.map((m,i)=>`<div class="bar-row"><div class="bar-label" title="${m.label}">${m.label}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(m.hours/mxH*100)}%;background:${CLR[i%4]}"></div></div><div class="bar-val">${(+m.hours.toFixed(0)).toLocaleString()}h</div></div>`).join('')}</div>
+  const selected = getSelectedDatasets();
+  if(selected.length<2) {
+    card.style.display='none';
+  } else {
+    card.style.display='block';
+    const metrics=selected.map(ds=>{
+      const counted = analyticsBookings(ds.bookings);
+      return {
+        label:ds.label,
+        total:counted.length,
+        hours:counted.reduce((s,b)=>s+bookedHours(b),0),
+        rooms:new Set(counted.map(b=>b.roomKey)).size,
+        after:counted.filter(b=>b.startHour<6).length,
+      };
+    });
+    const mxT=Math.max(...metrics.map(m=>m.total));
+    const mxH=Math.max(...metrics.map(m=>m.hours));
+    const CLR=['#4f8ef7','#7b5ea7','#4abf8a','#e0a85c'];
+    content.innerHTML=`<div class="two-col" style="margin-top:8px;">
+      <div><div class="section-sub" style="margin-bottom:8px;">Total Bookings</div>${metrics.map((m,i)=>`<div class="bar-row"><div class="bar-label" title="${m.label}">${m.label}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(m.total/mxT*100)}%;background:${CLR[i%4]}"></div></div><div class="bar-val">${m.total.toLocaleString()}</div></div>`).join('')}</div>
+      <div><div class="section-sub" style="margin-bottom:8px;">Total Hours</div>${metrics.map((m,i)=>`<div class="bar-row"><div class="bar-label" title="${m.label}">${m.label}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(m.hours/mxH*100)}%;background:${CLR[i%4]}"></div></div><div class="bar-val">${(+m.hours.toFixed(0)).toLocaleString()}h</div></div>`).join('')}</div>
+    </div>`;
+  }
+  seedRangeCompareDefaults();
+  renderRangeComparison();
+}
+
+function seedRangeCompareDefaults(force=false) {
+  const dr = getDateRange(allBookings);
+  if (!dr) return;
+  const firstStart = document.getElementById('rc-start-0');
+  if (!firstStart || (firstStart.value && !force)) return;
+  const min = new Date(dateStr(dr.min) + 'T00:00:00');
+  const max = new Date(dateStr(dr.max) + 'T00:00:00');
+  const totalDays = Math.max(1, Math.round((max - min) / 86400000) + 1);
+  const chunk = Math.max(1, Math.floor(totalDays / 2));
+  for (let i = 0; i < 2; i++) {
+    const s = new Date(min);
+    s.setDate(min.getDate() + i * chunk);
+    if (s > max) s.setTime(max.getTime());
+    const e = new Date(min);
+    e.setDate(min.getDate() + ((i === 1) ? totalDays - 1 : (chunk - 1)));
+    if (e > max) e.setTime(max.getTime());
+    const sEl = document.getElementById(`rc-start-${i}`);
+    const eEl = document.getElementById(`rc-end-${i}`);
+    const lEl = document.getElementById(`rc-label-${i}`);
+    const cEl = document.getElementById(`rc-enabled-${i}`);
+    if (sEl) sEl.value = dateStr(s);
+    if (eEl) eEl.value = dateStr(e);
+    if (lEl && (!lEl.value || force)) lEl.value = `Range ${i + 1}`;
+    if (cEl) cEl.checked = true;
+  }
+  const c3 = document.getElementById('rc-enabled-2');
+  if (c3 && force) c3.checked = false;
+  setRangeCompareSlotVisible(2, !!(c3?.checked || document.getElementById('rc-start-2')?.value || document.getElementById('rc-end-2')?.value));
+  updateRangeCompareControls();
+}
+
+function seedRangeCompareFromCurrent() {
+  const start = document.getElementById('f-start').value;
+  const end = document.getElementById('f-end').value;
+  if (!start || !end) return;
+  let slot = 0;
+  for (let i = 0; i < 3; i++) {
+    const enabled = document.getElementById(`rc-enabled-${i}`);
+    const sEl = document.getElementById(`rc-start-${i}`);
+    const eEl = document.getElementById(`rc-end-${i}`);
+    if (!enabled?.checked || !sEl?.value || !eEl?.value) { slot = i; break; }
+  }
+  setRangeCompareSlotVisible(slot, true);
+  document.getElementById(`rc-enabled-${slot}`).checked = true;
+  document.getElementById(`rc-start-${slot}`).value = start;
+  document.getElementById(`rc-end-${slot}`).value = end;
+  document.getElementById(`rc-label-${slot}`).value = slot === 0 ? 'Current Range' : `Current Range ${slot + 1}`;
+  updateRangeCompareControls();
+  renderRangeComparison();
+}
+
+function setRangeCompareSlotVisible(i, visible) {
+  const box = document.getElementById(`rc-box-${i}`);
+  if (box) box.style.display = visible ? '' : 'none';
+}
+
+function updateRangeCompareControls() {
+  for (let i = 0; i < 3; i++) {
+    const box = document.getElementById(`rc-box-${i}`) || document.getElementById(`rc-enabled-${i}`)?.closest('.range-compare-box');
+    const enabled = document.getElementById(`rc-enabled-${i}`)?.checked;
+    if (box) box.classList.toggle('inactive', !enabled);
+  }
+  const addBtn = document.getElementById('rc-add-btn');
+  if (addBtn) {
+    const hiddenSlot = [0,1,2].some(i => {
+      const box = document.getElementById(`rc-box-${i}`);
+      return box && box.style.display === 'none';
+    });
+    addBtn.disabled = !hiddenSlot;
+    addBtn.textContent = hiddenSlot ? '+ Add Range' : '3 Ranges Added';
+  }
+}
+
+function addRangeCompareRange() {
+  for (let i = 0; i < 3; i++) {
+    const box = document.getElementById(`rc-box-${i}`);
+    if (box && box.style.display === 'none') {
+      setRangeCompareSlotVisible(i, true);
+      const cEl = document.getElementById(`rc-enabled-${i}`);
+      if (cEl) cEl.checked = true;
+      updateRangeCompareControls();
+      renderRangeComparison();
+      return;
+    }
+  }
+}
+
+function onRangeCompareToggle(i) {
+  updateRangeCompareControls();
+  renderRangeComparison();
+}
+
+function getRangeCompareInputs() {
+  const ranges = [];
+  for (let i = 0; i < 3; i++) {
+    const box = document.getElementById(`rc-box-${i}`);
+    if (box && box.style.display === 'none') continue;
+    const enabled = document.getElementById(`rc-enabled-${i}`)?.checked !== false;
+    if (!enabled) continue;
+    const start = document.getElementById(`rc-start-${i}`)?.value;
+    const end = document.getElementById(`rc-end-${i}`)?.value;
+    const label = document.getElementById(`rc-label-${i}`)?.value.trim() || `Range ${i + 1}`;
+    if (start && end) ranges.push({ label, start, end });
+  }
+  return ranges;
+}
+
+function renderRangeComparison() {
+  const el = document.getElementById('range-compare-content');
+  if (!el) return;
+  const ranges = getRangeCompareInputs();
+  updateRangeCompareControls();
+  if (ranges.length < 2) {
+    el.innerHTML = '<div class="range-compare-empty">Select at least two date ranges.</div>';
+    return;
+  }
+  const cutoff = +(document.getElementById('rc-cutoff')?.value ?? 0);
+  const cutoffText = cutoffLabel(cutoff);
+  const CLR=['#4f8ef7','#7b5ea7','#4abf8a'];
+  const metrics = ranges.map((r, i) => {
+    const start = new Date(r.start + 'T00:00:00');
+    const end = new Date(r.end + 'T23:59:59');
+    const b = analyticsBookings(allBookings.filter(x => x.bookingDay >= start && x.bookingDay <= end));
+    const late = b.filter(x => isAfterCutoff(x.startMin, cutoff));
+    return {
+      ...r,
+      color: CLR[i % CLR.length],
+      total: b.length,
+      hours: b.reduce((s,x)=>s+bookedHours(x),0),
+      late: late.length,
+      lateHours: late.reduce((s,x)=>s+bookedHours(x),0),
+      rooms: new Set(b.map(x=>x.roomKey)).size,
+      days: new Set(b.map(x=>x.bookingDayStr)).size
+    };
+  });
+  const mxT = Math.max(1, ...metrics.map(m => m.total));
+  const mxH = Math.max(1, ...metrics.map(m => m.hours));
+  const mxLate = Math.max(1, ...metrics.map(m => m.late));
+  el.innerHTML = `<div class="two-col" style="margin-top:8px;">
+    <div><div class="section-sub" style="margin-bottom:8px;">Total Bookings</div>${metrics.map(m=>`<div class="bar-row"><div class="bar-label" title="${escHtml(m.label)}">${escHtml(m.label)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(m.total/mxT*100)}%;background:${m.color}"></div></div><div class="bar-val">${m.total.toLocaleString()}</div></div>`).join('')}</div>
+    <div><div class="section-sub" style="margin-bottom:8px;">Total Hours</div>${metrics.map(m=>`<div class="bar-row"><div class="bar-label" title="${escHtml(m.label)}">${escHtml(m.label)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(m.hours/mxH*100)}%;background:${m.color}"></div></div><div class="bar-val">${(+m.hours.toFixed(0)).toLocaleString()}h</div></div>`).join('')}</div>
+    <div><div class="section-sub" style="margin-bottom:8px;">After ${cutoffText}</div>${metrics.map(m=>`<div class="bar-row"><div class="bar-label" title="${escHtml(m.label)}">${escHtml(m.label)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(m.late/mxLate*100)}%;background:${m.color}"></div></div><div class="bar-val">${m.late.toLocaleString()}</div></div>`).join('')}</div>
+    <div style="grid-column:1 / -1;overflow-x:auto;margin-top:6px;"><table class="data-table"><thead><tr><th>Range</th><th>Date Range</th><th>Bookings</th><th>Hours</th><th>After ${cutoffText}</th><th>After ${cutoffText} Hours</th><th>Rooms</th><th>Days</th><th>Avg / Day</th></tr></thead><tbody>${metrics.map(m=>`<tr><td style="color:var(--text)">${escHtml(m.label)}</td><td>${m.start} → ${m.end}</td><td>${m.total.toLocaleString()}</td><td>${(+m.hours.toFixed(0)).toLocaleString()}h</td><td>${m.late.toLocaleString()}</td><td>${m.lateHours.toFixed(1)}h</td><td>${m.rooms.toLocaleString()}</td><td>${m.days.toLocaleString()}</td><td>${m.days ? (m.total/m.days).toFixed(1) : '0.0'}</td></tr>`).join('')}</tbody></table></div>
   </div>`;
+}
+
+function toggleDatasetSelection(index, checked) {
+  if (!datasets[index]) return;
+  datasets[index].selected = checked;
+  rebuildActiveBookings();
+  buildFilterUI();
+  applyFilters();
+  updateBadge();
+  renderHistory();
+}
+
+function setAllDatasetsSelected(checked) {
+  datasets.forEach(ds => { ds.selected = checked; });
+  rebuildActiveBookings();
+  buildFilterUI();
+  applyFilters();
+  updateBadge();
+  renderHistory();
 }
 
 // =====================================================================
@@ -1480,6 +1929,20 @@ function parseCSVLine(line){
     else cur+=c;
   }
   r.push(cur); return r;
+}
+
+function handleBrowseDatasetLoad(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.csv')) {
+    handleCSVUpload(event);
+  } else if (name.endsWith('.json')) {
+    handleSnapshotLoad(event);
+  } else {
+    event.target.value = '';
+    alert('Choose a .csv schedule export or .json StudioPulse snapshot.');
+  }
 }
 
 // =====================================================================
@@ -1556,7 +2019,7 @@ function handleCSVUpload(event) {
         // Exact date range match — replace that dataset, dedup whole pool
         const { merged, removed } = mergeIntoAll(incoming);
         allBookings = merged;
-        datasets[matchIdx] = { label: incomingLabel, bookings: incoming, semMon, dateRange: incomingDR };
+        datasets[matchIdx] = { label: incomingLabel, bookings: incoming, semMon, dateRange: incomingDR, selected: true };
         // Re-derive allBookings from all datasets (clean rebuild)
         const { deduped } = deduplicateBookings(datasets.flatMap(ds => ds.bookings));
         allBookings = deduped;
@@ -1568,12 +2031,13 @@ function handleCSVUpload(event) {
         // Different date range — merge and dedup across everything
         const { merged, removed } = mergeIntoAll(incoming);
         allBookings = merged;
-        datasets.push({ label: incomingLabel, bookings: incoming, semMon, dateRange: incomingDR });
+        datasets.push({ label: incomingLabel, bookings: incoming, semMon, dateRange: incomingDR, selected: true });
         const msg = removed > 0
           ? `Merged ${incoming.length.toLocaleString()} bookings, removed ${removed} duplicate${removed===1?'':'s'}`
           : `Merged ${incoming.length.toLocaleString()} bookings — no duplicates found`;
         showNotice(msg);
       }
+      rebuildActiveBookings();
 
       if (firstLoad) {
         initDataView();
@@ -1632,9 +2096,9 @@ function handleSnapshotLoad(event) {
           // Merge into existing dataset for that range
           const combined = [...datasets[matchIdx].bookings, ...bookings];
           const { deduped } = deduplicateBookings(combined);
-          datasets[matchIdx] = { ...datasets[matchIdx], bookings: deduped };
+          datasets[matchIdx] = { ...datasets[matchIdx], bookings: deduped, selected: ds.selected !== false };
         } else {
-          datasets.push({ label: ds.label, bookings, dateRange });
+          datasets.push({ label: ds.label, bookings, dateRange, selected: ds.selected !== false });
         }
       });
 
@@ -1642,6 +2106,7 @@ function handleSnapshotLoad(event) {
       const { deduped, removed } = deduplicateBookings(datasets.flatMap(d => d.bookings));
       const firstLoad = allBookings.length === 0;
       allBookings = deduped;
+      rebuildActiveBookings();
 
       if (firstLoad) {
         initDataView();
@@ -1669,6 +2134,7 @@ function exportSnapshot() {
     exportedAt:new Date().toISOString(),
     datasets:datasets.map(ds=>({
       label:ds.label,
+      selected:isDatasetSelected(ds),
       dateRange:ds.dateRange?{min:dateStr(ds.dateRange.min),max:dateStr(ds.dateRange.max)}:null,
       rows:ds.bookings.map(b=>[b.day,b.startMin,b.endMin,b.building,b.room,b.status,b.eventType,b.name,b.eventName||''])
     }))
@@ -1733,6 +2199,9 @@ function updateBadge(){
   if(dr){
     document.getElementById('data-badge').textContent=dateStr(dr.min)+' → '+dateStr(dr.max);
     document.getElementById('data-badge').className='badge active';
+  } else if (datasets.length) {
+    document.getElementById('data-badge').textContent='No datasets selected';
+    document.getElementById('data-badge').className='badge';
   }
 }
 function handleDrop(e){
@@ -1798,11 +2267,12 @@ function renderDayView() {
 
   // Day view respects sidebar filters (building, status, event type, etc.)
   const dayBooks = filteredBookings.filter(b => b.bookingDayStr === dvCurrentDay);
+  const countedDayBooks = analyticsBookings(dayBooks);
 
-  const totalH = dayBooks.reduce((s,b)=>s+b.durHours,0);
-  const activeRooms = new Set(dayBooks.map(b=>b.roomKey)).size;
+  const totalH = countedDayBooks.reduce((s,b)=>s+bookedHours(b),0);
+  const activeRooms = new Set(countedDayBooks.map(b=>b.roomKey)).size;
   document.getElementById('dv-stats').innerHTML =
-    `<span><strong>${dayBooks.length}</strong> bookings</span>` +
+    `<span><strong>${countedDayBooks.length}</strong> bookings</span>` +
     `<span><strong>${totalH.toFixed(1)}h</strong> booked</span>` +
     `<span><strong>${activeRooms}</strong> rooms active</span>`;
 
@@ -1947,7 +2417,7 @@ function renderDayView() {
 let roomExpandedKey = null;
 
 function renderRooms() {
-  const b = filteredBookings;
+  const b = analyticsBookings(filteredBookings);
   const sv = document.getElementById('f-start').value;
   const ev = document.getElementById('f-end').value;
   const start = sv ? new Date(sv+'T00:00:00') : null;
@@ -1960,7 +2430,7 @@ function renderRooms() {
   b.forEach(x => {
     if (!stats[x.roomKey]) stats[x.roomKey] = {c:0, h:0, meta:x.meta};
     stats[x.roomKey].c++;
-    stats[x.roomKey].h += x.durHours;
+    stats[x.roomKey].h += bookedHours(x);
   });
 
   let data = Object.entries(stats)
@@ -2030,9 +2500,9 @@ function renderRooms() {
         return `<tr>
           <td style="color:var(--text2)">${bk.bookingDayStr}</td>
           <td>${hm(bk.startMin)}\u2013${hm(bk.endMin)}</td>
-          <td>${bk.durHours.toFixed(1)}h</td>
+          <td>${bookedHours(bk).toFixed(1)}h</td>
           <td style="color:var(--text)">${bk.name || '(none)'}</td>
-          <td>${bk.eventType}</td>
+          <td>${analyticsEventType(bk)}</td>
           <td><span style="color:${sc}">${bk.status}</span></td>
         </tr>`;
       }).join('');
@@ -2215,6 +2685,7 @@ async function pushToGitHub() {
 // =====================================================================
 let snapPanelOpen = false;
 let cloudSnapshots = [];
+let cloudSnapshotsLoading = false;
 
 function toggleSnapPanel() {
   snapPanelOpen = !snapPanelOpen;
@@ -2241,11 +2712,18 @@ function snapCloudMsg(text, isError) {
   }
 }
 
+function getSnapListEls() {
+  const els = [...document.querySelectorAll('.snap-cloud-list')];
+  const legacy = document.getElementById('snap-cloud-list');
+  if (legacy && !els.includes(legacy)) els.push(legacy);
+  return els;
+}
+
 function renderSnapListMessage(text, isError) {
-  const el = document.getElementById('snap-cloud-list');
-  if (!el) return;
   const cls = 'snap-list-message' + (isError ? ' error' : '');
-  el.innerHTML = `<div class="${cls}">${escHtml(text)}</div>`;
+  getSnapListEls().forEach(el => {
+    el.innerHTML = `<div class="${cls}">${escHtml(text)}</div>`;
+  });
 }
 
 async function listCloudSnapshots() {
@@ -2261,18 +2739,87 @@ async function listCloudSnapshots() {
     cloudSnapshots = (data.snapshots || []).sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
     renderCloudSnapList();
   } catch (e) {
-    const msg = `Failed to list snapshots: ${e.message}`;
+    const msg = isLocalPreview()
+      ? `Local preview cannot read saved snapshots from ${PULSE_WORKER_URL}. Open the hosted app there, or upload a CSV/snapshot locally.`
+      : `Failed to list snapshots: ${e.message}`;
     renderSnapListMessage(msg, true);
   }
 }
 
+function mergeEmbeddedSnapshot(name, rows, snapLabel, selected=true) {
+  const { bookings, semMon } = processCompactRows(rows);
+  const dateRange = getDateRange(bookings);
+  const label = name ? `${name} · ${snapLabel}` : snapLabel;
+  const matchIdx = datasets.findIndex(d => dateRangesEqual(d.dateRange, dateRange));
+  if (matchIdx !== -1) {
+    const combined = [...datasets[matchIdx].bookings, ...bookings];
+    const { deduped } = deduplicateBookings(combined);
+    datasets[matchIdx] = { ...datasets[matchIdx], bookings: deduped, selected };
+  } else {
+    datasets.push({ label, bookings, semMon, dateRange, selected });
+  }
+  return bookings.length;
+}
+
+async function autoLoadCloudSnapshots() {
+  if (cloudSnapshotsLoading) return;
+  cloudSnapshotsLoading = true;
+  try {
+    renderSnapListMessage('Loading saved snapshots...');
+    const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshots`, { credentials: 'include' });
+    if (res.status === 401) {
+      setNoDataMessage('No data loaded', `Sign in at ${PULSE_WORKER_URL}, then reload to load saved snapshots.`);
+      renderSnapListMessage('Not signed in - open the Worker URL first.', true);
+      return;
+    }
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    cloudSnapshots = (data.snapshots || []).sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+    renderCloudSnapList();
+
+    if (!cloudSnapshots.length) {
+      setNoDataMessage('No data loaded', 'No saved snapshots were found. Upload a CSV or save a snapshot to start.');
+      return;
+    }
+
+    setNoDataMessage('Loading saved snapshots', `Merging ${cloudSnapshots.length} saved snapshot${cloudSnapshots.length===1?'':'s'}.`);
+    let loaded = 0;
+    for (const s of cloudSnapshots) {
+      try {
+        const snapRes = await fetch(`${PULSE_WORKER_URL}/pulse/snapshot/${encodeURIComponent(s.name)}`, { credentials: 'include' });
+        if (!snapRes.ok) continue;
+        const html = await snapRes.text();
+        const embedded = getEmbeddedData(html);
+        if (!embedded) continue;
+        loaded += mergeEmbeddedSnapshot(s.name, embedded.rows, embedded.label, true);
+      } catch(e) {
+        console.warn('Snapshot auto-load skipped:', s.name, e);
+      }
+    }
+
+    rebuildActiveBookings();
+    if (allBookings.length) {
+      initDataView();
+      showNotice(`Loaded ${loaded.toLocaleString()} bookings from saved snapshots`);
+    } else {
+      setNoDataMessage('No data loaded', 'Saved snapshots were found, but no embedded booking data could be loaded.');
+    }
+  } catch(e) {
+    const localMsg = `Local preview cannot read saved snapshots from ${PULSE_WORKER_URL}. Open the hosted app there, or upload a CSV/snapshot locally.`;
+    const msg = isLocalPreview() ? localMsg : `Could not load saved snapshots: ${e.message}`;
+    setNoDataMessage('No data loaded', msg);
+    renderSnapListMessage(isLocalPreview() ? localMsg : `Failed to list snapshots: ${e.message}`, true);
+  } finally {
+    cloudSnapshotsLoading = false;
+  }
+}
+
 function renderCloudSnapList() {
-  const el = document.getElementById('snap-cloud-list');
   if (!cloudSnapshots.length) {
     renderSnapListMessage('No saved snapshots yet.');
     return;
   }
-  el.innerHTML = '<div class="snap-list-title">Saved Snapshots</div>' +
+  const html = '<div class="snap-list-title">Saved Snapshots</div>' +
     cloudSnapshots.map(s => {
       const meta = [
         s.bookingCount ? s.bookingCount.toLocaleString() + ' bookings' : '',
@@ -2289,9 +2836,10 @@ function renderCloudSnapList() {
         <button class="btn secondary btn-snap-delete" onclick="deleteCloudSnapshot('${escAttr(s.name)}')">✕</button>
       </div>`;
     }).join('');
+  getSnapListEls().forEach(el => { el.innerHTML = html; });
 }
 
-function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escAttr(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
 async function saveCloudSnapshot() {
@@ -2346,24 +2894,12 @@ async function openSnapshot(name) {
     const embedded = getEmbeddedData(html);
     if (!embedded) throw new Error('Snapshot has no embedded data');
     const { rows, label: snapLabel } = embedded;
-
-    // Reuse the same compact-row processing as the offline data loader
-    const { bookings, semMon } = processCompactRows(rows);
-    const dateRange = getDateRange(bookings);
-
-    // Merge into existing datasets with dedup (same logic as handleSnapshotLoad)
-    const matchIdx = datasets.findIndex(d => dateRangesEqual(d.dateRange, dateRange));
-    if (matchIdx !== -1) {
-      const combined = [...datasets[matchIdx].bookings, ...bookings];
-      const { deduped } = deduplicateBookings(combined);
-      datasets[matchIdx] = { ...datasets[matchIdx], bookings: deduped };
-    } else {
-      datasets.push({ label: `${name} · ${snapLabel}`, bookings, semMon, dateRange });
-    }
+    const loadedCount = mergeEmbeddedSnapshot(name, rows, snapLabel, true);
 
     const { deduped, removed } = deduplicateBookings(datasets.flatMap(d => d.bookings));
     const firstLoad = allBookings.length === 0;
     allBookings = deduped;
+    rebuildActiveBookings();
 
     if (firstLoad) {
       initDataView();
@@ -2374,7 +2910,7 @@ async function openSnapshot(name) {
     }
 
     const dupMsg = removed > 0 ? `, ${removed} duplicate${removed===1?'':'s'} removed` : '';
-    snapCloudMsg(`Loaded "${name}" (${bookings.length.toLocaleString()} bookings${dupMsg})`);
+    snapCloudMsg(`Loaded "${name}" (${loadedCount.toLocaleString()} bookings${dupMsg})`);
   } catch (e) {
     snapCloudMsg(`Load failed: ${e.message}`, true);
   }
@@ -2400,6 +2936,23 @@ async function deleteCloudSnapshot(name) {
 // =====================================================================
 // COPY CARD AS PNG TO CLIPBOARD
 // =====================================================================
+function canCopyPNGToClipboard() {
+  if (typeof isLocalPreview === 'function' && isLocalPreview()) return false;
+  return !!(
+    window.isSecureContext &&
+    navigator.clipboard &&
+    navigator.clipboard.write &&
+    typeof ClipboardItem !== 'undefined'
+  );
+}
+
+function configureCopyPNGButton(btn, subject='chart') {
+  const canCopy = canCopyPNGToClipboard();
+  btn.title = canCopy ? `Copy ${subject} as PNG to clipboard` : `Download ${subject} as PNG`;
+  btn.setAttribute('aria-label', canCopy ? `Copy ${subject} as PNG` : `Download ${subject} as PNG`);
+  btn.innerHTML = canCopy ? '📋' : '⬇';
+}
+
 async function copyCardAsPNG(btn) {
   // Walk up to the nearest .card or .stat-grid-wrapper
   const card = btn.closest('.card') || btn.closest('.stat-grid-wrapper');
@@ -2425,14 +2978,13 @@ async function copyCardAsPNG(btn) {
 
     canvas.toBlob(async blob => {
       const reset = () => {
-        btn.innerHTML = '📋';
+        configureCopyPNGButton(btn, btn.closest('.stat-grid-wrapper') ? 'stats' : 'chart');
         btn.classList.remove('copied', 'errored', 'busy');
         btn.disabled = false;
       };
       try {
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]);
+        if (!canCopyPNGToClipboard()) throw new Error('PNG clipboard is unavailable in this browser');
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
         btn.innerHTML = '✓';
         btn.classList.remove('busy');
         btn.classList.add('copied');
@@ -2456,7 +3008,7 @@ async function copyCardAsPNG(btn) {
     btn.classList.remove('busy');
     btn.classList.add('errored');
     setTimeout(() => {
-      btn.innerHTML = '📋';
+      configureCopyPNGButton(btn, btn.closest('.stat-grid-wrapper') ? 'stats' : 'chart');
       btn.classList.remove('errored');
       btn.disabled = false;
     }, 1800);
@@ -2469,9 +3021,7 @@ function injectCopyButtons() {
     if (card.querySelector(':scope > .copy-png-btn')) return; // already has one
     const btn = document.createElement('button');
     btn.className = 'copy-png-btn';
-    btn.title = 'Copy chart as PNG to clipboard';
-    btn.setAttribute('aria-label', 'Copy chart as PNG');
-    btn.innerHTML = '📋';
+    configureCopyPNGButton(btn, 'chart');
     btn.onclick = function(e) { e.stopPropagation(); copyCardAsPNG(this); };
     card.appendChild(btn);
   });
@@ -2485,9 +3035,7 @@ function injectCopyButtons() {
     wrapper.appendChild(statGrid);
     const btn = document.createElement('button');
     btn.className = 'copy-png-btn';
-    btn.title = 'Copy stats as PNG to clipboard';
-    btn.setAttribute('aria-label', 'Copy stats as PNG');
-    btn.innerHTML = '📋';
+    configureCopyPNGButton(btn, 'stats');
     btn.onclick = function(e) { e.stopPropagation(); copyCardAsPNG(this); };
     wrapper.appendChild(btn);
   }
