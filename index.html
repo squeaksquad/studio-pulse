@@ -2935,11 +2935,16 @@ async function saveCloudSnapshot() {
   snapCloudMsg('');
 
   try {
-    const html = buildOfflineHTML();
-    const dr = getDateRange(allBookings);
+    const booksToSave = filteredBookings.length ? filteredBookings : allBookings;
+    const compactRows = booksToSave.map(b =>
+      [b.day, b.startMin, b.endMin, b.building, b.room, b.status, b.eventType, b.name, b.eventName || '']
+    );
+    const dr = getDateRange(booksToSave);
+    const snapLabel = dr ? `${dateStr(dr.min)} → ${dateStr(dr.max)}` : 'Snapshot';
+    const html = buildOfflineHTMLFromRows(compactRows, snapLabel);
     const meta = {
-      bookingCount: allBookings.length,
-      datasetCount: datasets.length,
+      bookingCount: booksToSave.length,
+      datasetCount: datasets.filter(ds => isDatasetSelected(ds)).length,
       dateRange: dr ? `${dateStr(dr.min)} to ${dateStr(dr.max)}` : null,
     };
     const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshot/${encodeURIComponent(name)}`, {
