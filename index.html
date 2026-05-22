@@ -247,9 +247,6 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
 .dataset-check { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; }
 .dataset-row-muted td { color: var(--text3); opacity: 0.72; }
 .dataset-row-muted td:first-child { color: var(--text3) !important; }
-.browse-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr); gap: 14px; align-items: start; }
-.browse-grid .card { height: 100%; }
-@media (max-width: 1000px) { .browse-grid { grid-template-columns: 1fr; } }
 .range-compare-controls { display: grid; grid-template-columns: repeat(3, minmax(190px, 1fr)); gap: 12px; margin-bottom: 14px; }
 .range-compare-box { border: 1px solid var(--border); border-radius: 6px; padding: 10px; background: rgba(79,142,247,0.03); }
 .range-compare-box.inactive { opacity: 0.62; }
@@ -650,36 +647,15 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
 
     <!-- BROWSE / COMPARE -->
     <div class="tab-panel" id="tab-history">
-      <div class="browse-grid">
-        <div class="card">
-          <div class="section-hdr">
-            <div>
-              <div class="section-title">Loaded Datasets</div>
-              <div class="section-sub">Check datasets to include them in live views and comparisons.</div>
-            </div>
-            <div class="compare-toolbar">
-              <button class="btn secondary" style="width:auto;font-size:11px;" onclick="setAllDatasetsSelected(true)">Select All</button>
-              <button class="btn secondary" style="width:auto;font-size:11px;" onclick="setAllDatasetsSelected(false)">Clear</button>
-            </div>
+      <div class="card">
+        <div class="section-hdr">
+          <div>
+            <div class="section-title">Saved Snapshots</div>
+            <div class="section-sub">Check snapshots to include their data in all views.</div>
           </div>
-          <div id="history-datasets"></div>
-          <button class="btn secondary" style="width:auto;margin-top:12px;font-size:11px;" onclick="document.getElementById('browse-load-file').click()">+ Load Snapshot / CSV</button>
-          <input type="file" id="browse-load-file" accept=".json,.csv" onchange="handleBrowseDatasetLoad(event)">
+          <button class="btn secondary" style="width:auto;font-size:11px;" onclick="listCloudSnapshots()">Refresh</button>
         </div>
-        <div class="card">
-          <div class="section-hdr">
-            <div>
-              <div class="section-title">Browse Saved Snapshots</div>
-              <div class="section-sub">Open a saved snapshot to add it to the loaded dataset list.</div>
-            </div>
-            <button class="btn secondary" style="width:auto;font-size:11px;" onclick="listCloudSnapshots()">Refresh</button>
-          </div>
-          <div class="snap-cloud-list"></div>
-        </div>
-      </div>
-      <div class="card" id="compare-card" style="display:none;">
-        <div class="section-hdr"><div><div class="section-title">Selected Comparison</div></div></div>
-        <div id="compare-content"></div>
+        <div class="snap-cloud-list"></div>
       </div>
       <div class="card">
         <div class="section-hdr">
@@ -1842,55 +1818,12 @@ function svgStacked(id, labels, series, h) {
 // HISTORY
 // =====================================================================
 function renderHistory() {
-  const list = document.getElementById('history-datasets');
-  if (!list) return;
   if (!cloudSnapshots.length && !renderHistory._snapRequested) {
     renderHistory._snapRequested = true;
     renderSnapListMessage('Loading saved snapshots...');
     listCloudSnapshots();
-  }
-
-  list.innerHTML = '<table class="data-table"><thead><tr><th>View</th><th>Dataset</th><th>Date Range</th><th>Bookings</th><th>Rooms</th><th>Hours</th></tr></thead><tbody>'+
-    datasets.map((ds,i)=>{
-      const dr=ds.dateRange;
-      const counted = analyticsBookings(ds.bookings);
-      const h=counted.reduce((s,b)=>s+bookedHours(b),0);
-      const r=new Set(counted.map(b=>b.roomKey)).size;
-      const checked = isDatasetSelected(ds);
-      return `<tr class="${checked?'':'dataset-row-muted'}">
-        <td><input class="dataset-check" type="checkbox" ${checked?'checked':''} onchange="toggleDatasetSelection(${i}, this.checked)"></td>
-        <td style="color:var(--text)">${escHtml(ds.label)}</td>
-        <td>${dr?dateStr(dr.min)+' → '+dateStr(dr.max):'—'}</td>
-        <td>${counted.length.toLocaleString()}</td>
-        <td>${r.toLocaleString()}</td>
-        <td>${(+h.toFixed(0)).toLocaleString()}h</td>
-      </tr>`;
-    }).join('')+'</tbody></table>';
-
-  const card=document.getElementById('compare-card');
-  const content=document.getElementById('compare-content');
-  const selected = getSelectedDatasets();
-  if(selected.length<2) {
-    card.style.display='none';
   } else {
-    card.style.display='block';
-    const metrics=selected.map(ds=>{
-      const counted = analyticsBookings(ds.bookings);
-      return {
-        label:ds.label,
-        total:counted.length,
-        hours:counted.reduce((s,b)=>s+bookedHours(b),0),
-        rooms:new Set(counted.map(b=>b.roomKey)).size,
-        after:counted.filter(b=>b.startHour<6).length,
-      };
-    });
-    const mxT=Math.max(...metrics.map(m=>m.total));
-    const mxH=Math.max(...metrics.map(m=>m.hours));
-    const CLR=['#4f8ef7','#7b5ea7','#4abf8a','#e0a85c'];
-    content.innerHTML=`<div class="two-col" style="margin-top:8px;">
-      <div><div class="section-sub" style="margin-bottom:8px;">Total Bookings</div>${metrics.map((m,i)=>`<div class="bar-row"><div class="bar-label" title="${m.label}">${m.label}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(m.total/mxT*100)}%;background:${CLR[i%4]}"></div></div><div class="bar-val">${m.total.toLocaleString()}</div></div>`).join('')}</div>
-      <div><div class="section-sub" style="margin-bottom:8px;">Total Hours</div>${metrics.map((m,i)=>`<div class="bar-row"><div class="bar-label" title="${m.label}">${m.label}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(m.hours/mxH*100)}%;background:${CLR[i%4]}"></div></div><div class="bar-val">${(+m.hours.toFixed(0)).toLocaleString()}h</div></div>`).join('')}</div>
-    </div>`;
+    renderCloudSnapList();
   }
   seedRangeCompareDefaults();
   renderRangeComparison();
@@ -2829,13 +2762,16 @@ function mergeEmbeddedSnapshot(name, rows, snapLabel, selected=true) {
   const { bookings, semMon } = processCompactRows(rows);
   const dateRange = getDateRange(bookings);
   const label = name ? `${name} · ${snapLabel}` : snapLabel;
-  const matchIdx = datasets.findIndex(d => dateRangesEqual(d.dateRange, dateRange));
+  // Only merge into an existing dataset that belongs to the same named snapshot
+  const matchIdx = datasets.findIndex(d =>
+    dateRangesEqual(d.dateRange, dateRange) && (!d.snapshotName || d.snapshotName === name)
+  );
   if (matchIdx !== -1) {
     const combined = [...datasets[matchIdx].bookings, ...bookings];
     const { deduped } = deduplicateBookings(combined);
-    datasets[matchIdx] = { ...datasets[matchIdx], bookings: deduped, selected };
+    datasets[matchIdx] = { ...datasets[matchIdx], bookings: deduped, selected, snapshotName: name };
   } else {
-    datasets.push({ label, bookings, semMon, dateRange, selected });
+    datasets.push({ label, bookings, semMon, dateRange, selected, snapshotName: name });
   }
   return bookings.length;
 }
@@ -2901,24 +2837,88 @@ function renderCloudSnapList() {
     renderSnapListMessage('No saved snapshots yet.');
     return;
   }
-  const html = '<div class="snap-list-title">Saved Snapshots</div>' +
-    cloudSnapshots.map(s => {
-      const meta = [
-        s.bookingCount ? s.bookingCount.toLocaleString() + ' bookings' : '',
-        s.datasetCount ? s.datasetCount + ' dataset' + (s.datasetCount > 1 ? 's' : '') : '',
-        s.dateRange ? s.dateRange : '',
-      ].filter(Boolean).join(' · ');
-      const date = s.savedAt ? new Date(s.savedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
-      return `<div class="snap-item">
-        <div style="flex:1;min-width:0;">
-          <div class="snap-item-name">${escHtml(s.name)}</div>
-          <div class="snap-item-meta">${meta}${date ? ' · ' + date : ''}</div>
-        </div>
-        <button class="btn secondary" onclick="openSnapshot('${escAttr(s.name)}')">Open</button>
-        <button class="btn secondary btn-snap-delete" onclick="deleteCloudSnapshot('${escAttr(s.name)}')">✕</button>
-      </div>`;
-    }).join('');
+  const html = cloudSnapshots.map(s => {
+    const meta = [
+      s.bookingCount ? s.bookingCount.toLocaleString() + ' bookings' : '',
+      s.datasetCount ? s.datasetCount + ' dataset' + (s.datasetCount > 1 ? 's' : '') : '',
+      s.dateRange ? s.dateRange : '',
+    ].filter(Boolean).join(' · ');
+    const date = s.savedAt ? new Date(s.savedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+    const isActive = datasets.some(ds => ds.snapshotName === s.name && isDatasetSelected(ds));
+    return `<div class="snap-item">
+      <input type="checkbox" class="dataset-check" data-snap="${escAttr(s.name)}" ${isActive ? 'checked' : ''} onchange="toggleSnapshotActive('${escAttr(s.name)}', this.checked)" style="flex-shrink:0;">
+      <div style="flex:1;min-width:0;">
+        <div class="snap-item-name">${escHtml(s.name)}</div>
+        <div class="snap-item-meta">${meta}${date ? ' · ' + date : ''}</div>
+      </div>
+      <button class="btn secondary btn-snap-delete" onclick="deleteCloudSnapshot('${escAttr(s.name)}')">✕</button>
+    </div>`;
+  }).join('');
   getSnapListEls().forEach(el => { el.innerHTML = html; });
+}
+
+async function toggleSnapshotActive(name, checked) {
+  const existingIdx = datasets.findIndex(ds => ds.snapshotName === name);
+
+  if (!checked) {
+    if (existingIdx !== -1) {
+      datasets.splice(existingIdx, 1);
+      rebuildActiveBookings();
+      if (allBookings.length) {
+        buildFilterUI();
+        applyFilters();
+        updateBadge();
+      } else {
+        document.getElementById('no-data').style.display = 'flex';
+        document.getElementById('data-view').style.display = 'none';
+        updateBadge();
+      }
+      renderCloudSnapList();
+    }
+    return;
+  }
+
+  // Already loaded — just make it selected
+  if (existingIdx !== -1) {
+    datasets[existingIdx].selected = true;
+    rebuildActiveBookings();
+    buildFilterUI();
+    applyFilters();
+    updateBadge();
+    renderCloudSnapList();
+    return;
+  }
+
+  // Need to fetch from worker
+  const checkEl = document.querySelector(`[data-snap="${CSS.escape(name)}"]`);
+  if (checkEl) checkEl.disabled = true;
+  try {
+    const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshot/${encodeURIComponent(name)}`, { credentials: 'include' });
+    if (res.status === 401) { snapCloudMsg('Not signed in.', true); if (checkEl) { checkEl.checked = false; checkEl.disabled = false; } return; }
+    if (!res.ok) throw new Error(await res.text());
+    const html = await res.text();
+    const embedded = getEmbeddedData(html);
+    if (!embedded) throw new Error('Snapshot has no embedded data');
+    mergeEmbeddedSnapshot(name, embedded.rows, embedded.label, true);
+    rebuildActiveBookings();
+    if (allBookings.length) {
+      if (document.getElementById('no-data').style.display !== 'none') {
+        initDataView();
+        rememberArchiveView();
+      } else {
+        buildFilterUI();
+        applyFilters();
+      }
+      updateBadge();
+    }
+    renderCloudSnapList();
+    showNotice(`Loaded "${name}"`);
+  } catch (e) {
+    snapCloudMsg(`Load failed: ${e.message}`, true);
+    if (checkEl) { checkEl.checked = false; }
+  } finally {
+    if (checkEl) checkEl.disabled = false;
+  }
 }
 
 function escHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -2963,32 +2963,6 @@ async function saveCloudSnapshot() {
   }
 }
 
-async function openSnapshot(name) {
-  snapCloudMsg(`Loading "${name}"…`);
-  try {
-    const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshot/${encodeURIComponent(name)}`, {
-      credentials: 'include',
-    });
-    if (res.status === 401) { snapCloudMsg('Not signed in.', true); return; }
-    if (!res.ok) throw new Error(await res.text());
-    const html = await res.text();
-
-    const embedded = getEmbeddedData(html);
-    if (!embedded) throw new Error('Snapshot has no embedded data');
-    const { rows, label: snapLabel, state } = embedded;
-    const { bookings, semMon } = processCompactRows(rows);
-    restoreSnapshotDatasets([{
-      label: `${name} · ${snapLabel}`,
-      bookings,
-      semMon,
-      dateRange: getDateRange(bookings),
-      selected: true,
-    }], state, name);
-    snapCloudMsg(`Opened "${name}" (${bookings.length.toLocaleString()} bookings)`);
-  } catch (e) {
-    snapCloudMsg(`Load failed: ${e.message}`, true);
-  }
-}
 
 async function deleteCloudSnapshot(name) {
   if (!confirm(`Delete snapshot "${name}"?`)) return;
