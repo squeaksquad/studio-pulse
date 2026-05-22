@@ -514,7 +514,7 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
     <!-- HEATMAPS -->
     <div class="tab-panel" id="tab-heatmaps">
       <div style="display:flex;justify-content:flex-end;gap:14px;align-items:center;margin-bottom:-8px;">
-        <label class="hm-toggle"><input type="checkbox" id="hm-show-vals" onchange="renderHM1();renderHM2();renderHM3()"> Show values in heatmaps</label>
+        <label class="hm-toggle"><input type="checkbox" id="hm-show-vals" checked onchange="renderHM1();renderHM2();renderHM3()"> Show values in heatmaps</label>
         <div class="hm-controls" style="gap:5px;">
           <label style="font-size:10px;color:var(--text3);">Late-night cutoff</label>
           <select class="inline" id="hm-cutoff" onchange="onCutoffChange()">
@@ -549,6 +549,10 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
             <div class="section-title">After-Hours Demand</div>
             <div class="section-sub" id="hm3-sub">Bookings starting after cutoff, by building × day of week.</div>
           </div>
+          <select class="inline" id="hm3-metric" onchange="renderHM3()">
+            <option value="count">Booking count</option>
+            <option value="hours" selected>Total hours</option>
+          </select>
         </div>
         <div class="hm1-layout">
           <div><div class="heatmap-wrap" id="hm3"></div></div>
@@ -1083,8 +1087,9 @@ function captureViewState() {
     heatmaps: {
       showValues: !!document.getElementById('hm-show-vals')?.checked,
       cutoff: document.getElementById('hm-cutoff')?.value || '0',
-      hm1Metric: document.getElementById('hm1-metric')?.value || 'count',
+      hm1Metric: document.getElementById('hm1-metric')?.value || 'hours',
       hm2Metric: document.getElementById('hm2-metric')?.value || 'hours',
+      hm3Metric: document.getElementById('hm3-metric')?.value || 'hours',
     },
     rooms: {
       search: document.getElementById('rooms-search')?.value || '',
@@ -1123,10 +1128,11 @@ function restoreViewState(state) {
   Object.entries(capMap).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.checked = !!val; });
 
   if (document.getElementById('overview-metric')) document.getElementById('overview-metric').value = state.overviewMetric || 'hours';
-  if (document.getElementById('hm-show-vals')) document.getElementById('hm-show-vals').checked = !!state.heatmaps?.showValues;
+  if (document.getElementById('hm-show-vals')) document.getElementById('hm-show-vals').checked = state.heatmaps?.showValues !== false;
   if (document.getElementById('hm-cutoff')) document.getElementById('hm-cutoff').value = state.heatmaps?.cutoff || '0';
   if (document.getElementById('hm1-metric')) document.getElementById('hm1-metric').value = state.heatmaps?.hm1Metric || 'hours';
   if (document.getElementById('hm2-metric')) document.getElementById('hm2-metric').value = state.heatmaps?.hm2Metric || 'hours';
+  if (document.getElementById('hm3-metric')) document.getElementById('hm3-metric').value = state.heatmaps?.hm3Metric || 'hours';
   onCutoffChange();
 
   if (document.getElementById('rooms-search')) document.getElementById('rooms-search').value = state.rooms?.search || '';
@@ -1630,6 +1636,7 @@ function onCutoffChange() {
 function renderHM3() {
   const cutoff = getCutoffMin();
   const showVals = document.getElementById('hm-show-vals')?.checked || false;
+  const metric = document.getElementById('hm3-metric')?.value || 'hours';
   const counted = analyticsBookings(filteredBookings);
   const b = counted.filter(x => isAfterCutoff(x.startMin, cutoff));
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1643,18 +1650,19 @@ function renderHM3() {
   const matC={},matH={};
   blds.forEach(bld=>{matC[bld]=Array(7).fill(0);matH[bld]=Array(7).fill(0);});
   b.forEach(x=>{const bk=dvBuilding(x);if(matC[bk]){matC[bk][x.dow]++;matH[bk][x.dow]+=bookedHours(x);}});
+  const mat = metric === 'hours' ? matH : matC;
   let maxV=0;
-  blds.forEach(bld=>matC[bld].forEach(v=>{if(v>maxV)maxV=v;}));
+  blds.forEach(bld=>mat[bld].forEach(v=>{if(v>maxV)maxV=v;}));
   let html='<table class="heatmap-table"><thead><tr><th></th>';
   DAYS.forEach(d=>html+=`<th>${d}</th>`);
   html+='</tr></thead><tbody>';
   blds.forEach(bld=>{
     html+=`<tr><td class="hm-row-label" style="width:80px;">${BLDG[bld]||bld}</td>`;
     DAYS.forEach((_,d)=>{
-      const v=matC[bld][d];
+      const v=mat[bld][d];
       const vc=showVals?' with-val':'';
-      const vt=showVals?(v||''):'';
-      const tip=`${BLDG[bld]||bld} / ${DAYS[d]}<br>${v} bookings / ${matH[bld][d].toFixed(1)}h<br>after ${cutoffLabel(cutoff)}`;
+      const vt=showVals?(metric==='hours'?(v?v.toFixed(1):''):(v||'')):'';
+      const tip=`${BLDG[bld]||bld} / ${DAYS[d]}<br>${matC[bld][d]} bookings / ${matH[bld][d].toFixed(1)}h<br>after ${cutoffLabel(cutoff)}`;
       html+=`<td><div class="hm-cell${vc}" style="background:${heatColor(maxV?v/maxV:0)};width:32px;height:24px;" onmouseenter="tip(event,'${tip}')" onmouseleave="untip()">${vt}</div></td>`;
     });
     html+='</tr>';
