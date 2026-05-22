@@ -379,7 +379,6 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
     <button class="btn secondary" style="width:auto;padding:5px 10px;display:none;" onclick="resetToArchiveView()" id="archive-reset-btn">Reset to All Data</button>
     <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="exportSnapshot()">⬇ Export Snapshot</button>
     <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="openOfflineModal()">⬇ Offline HTML</button>
-    <button class="btn secondary" style="width:auto;padding:5px 10px;" onclick="pushToGitHub()" id="push-btn">⬆ Push to GitHub</button>
   </div>
 </div>
 
@@ -2757,66 +2756,6 @@ function buildOfflineHTML() {
   return buildOfflineHTMLFromRows(compactRows, label);
 }
 
-async function pushToGitHub() {
-  if (!allBookings.length) {
-    showNotice('No data loaded — nothing to push.', 'var(--accent3)');
-    return;
-  }
-
-  const btn = document.getElementById('push-btn');
-  const origText = btn.textContent;
-  btn.textContent = '⬆ Pushing…';
-  btn.disabled = true;
-
-  try {
-    const offlineHTML = buildOfflineHTML();
-    const embeddedRows = getEmbeddedRowsCount(offlineHTML);
-    if (embeddedRows !== allBookings.length || embeddedRows <= 0) {
-      showNotice(
-        `Push aborted: generated HTML has ${embeddedRows < 0 ? 'invalid' : embeddedRows.toLocaleString()} embedded rows; expected ${allBookings.length.toLocaleString()}.`,
-        'var(--accent3)'
-      );
-      return;
-    }
-
-    const res = await fetch(`${PULSE_WORKER_URL}/pulse/push`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-      body: offlineHTML,
-    });
-
-    if (res.status === 401) {
-      showNotice(
-        `Not signed in — open ${PULSE_WORKER_URL} in this browser first, then try again.`,
-        'var(--accent3)'
-      );
-      return;
-    }
-
-    if (res.status === 403) {
-      showNotice('Push failed: Manager role required.', 'var(--accent3)');
-      return;
-    }
-
-    if (!res.ok) {
-      const err = await res.text();
-      showNotice(`Push failed: ${err}`, 'var(--accent3)');
-      return;
-    }
-
-    const result = await res.json();
-    showNotice(
-      `✓ Pushed to GitHub (${allBookings.length.toLocaleString()} bookings, ${result.date})`,
-      'var(--accent4)'
-    );
-  } catch(e) {
-    showNotice(`Push error: ${e.message}`, 'var(--accent3)');
-  } finally {
-    btn.textContent = origText;
-    btn.disabled = false;
-  }
-}
 
 // =====================================================================
 // CLOUD SNAPSHOTS (Worker → GitHub repo)
