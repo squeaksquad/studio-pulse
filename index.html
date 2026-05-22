@@ -3088,6 +3088,44 @@ function configureCopyPNGButton(btn, subject='chart') {
   btn.innerHTML = canCopy ? '📋' : '⬇';
 }
 
+// Crop a canvas to its actual content by scanning from the right for the last
+// non-background, non-border pixel, then adding visual padding.
+function cropCanvasToContent(canvas) {
+  const SCALE = 2;          // must match html2canvas scale option
+  const PAD   = 24 * SCALE; // 24 visual px of breathing room to the right of content
+  const ctx = canvas.getContext('2d');
+  const { width, height } = canvas;
+  const d = ctx.getImageData(0, 0, width, height).data;
+
+  // Sample card background from top-right interior (past border + outer padding)
+  const bi = (4 * width + (width - 8)) * 4;
+  const bgR = d[bi], bgG = d[bi+1], bgB = d[bi+2];
+
+  // Sample card border from the right edge midpoint
+  const bri = (Math.floor(height / 2) * width + (width - 1)) * 4;
+  const brR = d[bri], brG = d[bri+1], brB = d[bri+2];
+
+  // Find the rightmost column with a pixel that is neither background nor border
+  let contentRight = 0;
+  scan: for (let x = width - 1; x >= 0; x--) {
+    for (let y = 0; y < height; y++) {
+      const i = (y * width + x) * 4;
+      if (d[i+3] < 20) continue;
+      const diffBg  = Math.abs(d[i]-bgR) + Math.abs(d[i+1]-bgG) + Math.abs(d[i+2]-bgB);
+      const diffBdr = Math.abs(d[i]-brR) + Math.abs(d[i+1]-brG) + Math.abs(d[i+2]-brB);
+      if (diffBg > 20 && diffBdr > 20) { contentRight = x; break scan; }
+    }
+  }
+
+  const newWidth = Math.min(contentRight + PAD + 1, width);
+  if (newWidth >= width - PAD / 2) return canvas; // not enough empty space to bother
+  const out = document.createElement('canvas');
+  out.width  = newWidth;
+  out.height = height;
+  out.getContext('2d').drawImage(canvas, 0, 0, newWidth, height, 0, 0, newWidth, height);
+  return out;
+}
+
 async function copyCardAsPNG(btn) {
   // Walk up to the nearest .card or .stat-grid-wrapper
   const card = btn.closest('.card') || btn.closest('.stat-grid-wrapper');
@@ -3102,7 +3140,7 @@ async function copyCardAsPNG(btn) {
     const cs = getComputedStyle(document.documentElement);
     const bg = cs.getPropertyValue('--surface').trim() || '#13161d';
 
-    const canvas = await html2canvas(card, {
+    const rawCanvas = await html2canvas(card, {
       backgroundColor: bg,
       scale: 2, // 2× for retina-quality PNGs
       logging: false,
@@ -3110,6 +3148,8 @@ async function copyCardAsPNG(btn) {
       // Ignore the copy button itself in the capture
       ignoreElements: el => el.classList && el.classList.contains('copy-png-btn'),
     });
+
+    const canvas = cropCanvasToContent(rawCanvas);
 
     canvas.toBlob(async blob => {
       const reset = () => {
