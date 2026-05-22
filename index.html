@@ -469,6 +469,7 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
       <div style="font-size:36px;">🎛</div>
       <div style="font-family:var(--sans);font-size:15px;font-weight:700;color:var(--text2);">No data loaded</div>
       <div style="font-size:12px;text-align:center;max-width:280px;line-height:1.6;">Upload an AAOF schedule export CSV using the sidebar, or load a previously exported snapshot.</div>
+      <a id="signin-link" href="https://berklee.bryandimaio.com" target="_blank" rel="noopener" style="display:none;margin-top:4px;font-size:12px;color:var(--accent);font-family:var(--sans);text-decoration:none;border:1px solid var(--accent);border-radius:4px;padding:6px 14px;">Sign in at berklee.bryandimaio.com →</a>
     </div>
     <div id="data-view" style="display:none;flex-direction:column;gap:16px;">
     <div class="tabs">
@@ -2909,6 +2910,8 @@ async function autoLoadCloudSnapshots() {
     if (res.status === 401) {
       setNoDataMessage('No data loaded', `Sign in at ${PULSE_WORKER_URL}, then reload to load saved snapshots.`);
       renderSnapListMessage('Not signed in - open the Worker URL first.', true);
+      const sl = document.getElementById('signin-link');
+      if (sl) sl.style.display = '';
       return;
     }
     if (!res.ok) throw new Error(await res.text());
