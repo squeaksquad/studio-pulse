@@ -409,6 +409,11 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
 
   .main { padding: 12px; }
   .card { padding: 12px 14px; overflow: hidden; }
+  .hm1-layout > div:first-child {
+    width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+  }
 
   /* Heatmap scroll indicator: fade right edge until scrolled to end */
   .heatmap-wrap, .week-hm-wrap {
