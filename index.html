@@ -1217,6 +1217,27 @@ function fmtRangeLabel(start, end) {
   return `${fmt(s)} - ${fmt(e)}, ${s.getFullYear()}`;
 }
 
+function rangeSortKey(item) {
+  const range = item?.dateRange;
+  if (range?.max && range?.min) return { start: dateStr(range.min), end: dateStr(range.max) };
+  if (item?.start && item?.end) return { start: item.start, end: item.end };
+  if (typeof item?.dateRange === 'string') {
+    const dates = item.dateRange.match(/\d{4}-\d{2}-\d{2}/g) || [];
+    if (dates.length) return { start: dates[0], end: dates[dates.length - 1] };
+  }
+  return { start: '', end: '' };
+}
+
+function compareRangeDesc(a, b) {
+  const ar = rangeSortKey(a);
+  const br = rangeSortKey(b);
+  const byEnd = (br.end || '').localeCompare(ar.end || '');
+  if (byEnd) return byEnd;
+  const byStart = (br.start || '').localeCompare(ar.start || '');
+  if (byStart) return byStart;
+  return (a.label || a.name || '').localeCompare(b.label || b.name || '');
+}
+
 function defaultSemesterRanges() {
   const seen = new Set();
   const ranges = [];
@@ -1241,11 +1262,12 @@ function defaultSemesterRanges() {
       ranges.push({ label: fmtRangeLabel(start, end), start, end });
     }
   }
-  return ranges;
+  return ranges.sort(compareRangeDesc);
 }
 
 function activeSemesterRanges() {
   const ranges = customSemesterRanges.length ? customSemesterRanges : defaultSemesterRanges();
+  if (customSemesterRanges.length) customSemesterRanges.sort(compareRangeDesc);
   return ranges
     .filter(r => r && r.label && r.start && r.end)
     .map(r => ({ ...r, semMon: getMondayOf(new Date(r.start + 'T00:00:00')) }));
@@ -1304,6 +1326,7 @@ function setSemesterRange(idx, field, value) {
   ensureEditableSemesterRanges();
   if (!customSemesterRanges[idx]) return;
   customSemesterRanges[idx][field] = value.trim ? value.trim() : value;
+  customSemesterRanges.sort(compareRangeDesc);
   persistSemesterRanges();
   renderSemesterRangeEditor();
   renderCurrentTab();
@@ -1315,6 +1338,7 @@ function addSemesterRange() {
   const start = dr ? dateStr(dr.min) : '';
   const end = dr ? dateStr(dr.max) : '';
   customSemesterRanges.push({ label: `Semester ${customSemesterRanges.length + 1}`, start, end });
+  customSemesterRanges.sort(compareRangeDesc);
   persistSemesterRanges();
   renderSemesterRangeEditor();
   renderCurrentTab();
@@ -3349,7 +3373,7 @@ async function listCloudSnapshots() {
     }
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
-    cloudSnapshots = (data.snapshots || []).sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+    cloudSnapshots = (data.snapshots || []).sort(compareRangeDesc);
     renderCloudSnapList();
   } catch (e) {
     const msg = isLocalPreview()
@@ -3392,7 +3416,7 @@ async function autoLoadCloudSnapshots() {
     }
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
-    cloudSnapshots = (data.snapshots || []).sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+    cloudSnapshots = (data.snapshots || []).sort(compareRangeDesc);
     renderCloudSnapList();
 
     if (!cloudSnapshots.length) {
@@ -3440,7 +3464,7 @@ function renderCloudSnapList() {
     renderSnapListMessage('No saved snapshots yet.');
     return;
   }
-  const html = cloudSnapshots.map(s => {
+  const html = [...cloudSnapshots].sort(compareRangeDesc).map(s => {
     const meta = [
       s.bookingCount ? s.bookingCount.toLocaleString() + ' bookings' : '',
       s.datasetCount ? s.datasetCount + ' dataset' + (s.datasetCount > 1 ? 's' : '') : '',
@@ -3463,7 +3487,7 @@ function renderCloudSnapList() {
 function renderLoadedDatasetsList() {
   const els = document.querySelectorAll('.loaded-datasets-list');
   if (!els.length) return;
-  const local = datasets.map((ds, i) => ({ ds, i })).filter(({ ds }) => !ds.snapshotName);
+  const local = datasets.map((ds, i) => ({ ds, i })).filter(({ ds }) => !ds.snapshotName).sort((a, b) => compareRangeDesc(a.ds, b.ds));
   if (!local.length) {
     els.forEach(el => { el.innerHTML = '<div class="snap-list-message">No local files loaded. Upload a CSV or XLSX to get started.</div>'; });
     return;
