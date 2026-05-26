@@ -153,6 +153,24 @@ select.inline { width: auto; margin: 0; font-size: 10px; padding: 4px 7px; }
 .hm-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .hm-toggle { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text2); cursor: pointer; user-select: none; }
 .hm-toggle input { accent-color: var(--accent); width: 12px; height: 12px; cursor: pointer; }
+.semester-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin: 0 0 10px; }
+.semester-tab {
+  border: 1px solid var(--border2); background: var(--surface2); color: var(--text2);
+  font-family: var(--sans); font-size: 10px; padding: 4px 8px; border-radius: 4px;
+  cursor: pointer; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.semester-tab:hover { border-color: var(--accent); color: var(--accent); }
+.semester-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(79,142,247,0.08); }
+.semester-range-grid { display: grid; grid-template-columns: 1fr 140px 140px 28px; gap: 6px; align-items: center; }
+.semester-range-grid input {
+  width: 100%; margin: 0; background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text); font-family: var(--sans); font-size: 11px; padding: 6px 8px; border-radius: 4px;
+}
+.semester-range-grid .icon-btn {
+  width: 28px; height: 28px; padding: 0; border-radius: 4px; border: 1px solid var(--border2);
+  background: var(--surface2); color: var(--text3); cursor: pointer; font-size: 14px; line-height: 1;
+}
+.semester-range-grid .icon-btn:hover { border-color: var(--accent3); color: var(--accent3); }
 
 /* Tooltip */
 .tooltip { position: fixed; background: var(--surface2); border: 1px solid var(--border2); border-radius: 5px; padding: 7px 10px; font-size: 10px; color: var(--text); pointer-events: none; z-index: 9999; display: none; line-height: 1.7; max-width: 180px; }
@@ -644,6 +662,7 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
             <option value="hours" selected>Total hours</option>
           </select>
         </div>
+        <div class="semester-tabs" id="hm1-semester-tabs"></div>
         <div class="hm1-layout">
           <div>
             <div class="heatmap-wrap" id="hm1"></div>
@@ -677,6 +696,7 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
             <option value="util">Utilization %</option>
           </select>
         </div>
+        <div class="semester-tabs" id="hm2-semester-tabs"></div>
         <div class="week-hm-wrap" id="hm2"></div>
         <div class="hm-legend" id="hm2-legend"></div>
       </div>
@@ -717,6 +737,19 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
 
     <!-- TRENDS -->
     <div class="tab-panel" id="tab-trends">
+      <div class="card">
+        <div class="section-hdr">
+          <div>
+            <div class="section-title">Semester Ranges</div>
+            <div class="section-sub">Defaults to each selected snapshot's date range. Edit these windows to compare full semesters.</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="btn secondary" style="width:auto;font-size:11px;" onclick="addSemesterRange()">Add</button>
+            <button class="btn secondary" style="width:auto;font-size:11px;" onclick="resetSemesterRanges()">Use Snapshot Ranges</button>
+          </div>
+        </div>
+        <div id="semester-ranges"></div>
+      </div>
       <div class="card">
         <div class="section-hdr"><div><div class="section-title">Weekly Booking Volume</div></div></div>
         <div id="chart-weekly" style="height:160px;"></div>
@@ -868,6 +901,8 @@ let allBookings = [];
 let filteredBookings = [];
 let datasets = [];
 let savedPeriods = [];
+let customSemesterRanges = [];
+let heatmapSemesterTabs = { hm1: 0, hm2: 0 };
 let currentTab = 'overview';
 let semesterMonday = null; // global for current primary dataset
 let archiveDatasets = null;
@@ -1026,6 +1061,7 @@ function processBookings(csvRows) {
 // =====================================================================
 window.addEventListener('DOMContentLoaded', () => {
   savedPeriods = loadSavedPeriods();
+  customSemesterRanges = loadSemesterRanges();
 
   if (PREBAKED_ROWS) {
     // Prebaked data present — rows are compact format [day, startMin, endMin, building, room, status, eventType, name, eventName]
@@ -1159,6 +1195,150 @@ function persistSavedPeriods() {
   try { localStorage.setItem('sp-saved-periods', JSON.stringify(savedPeriods)); } catch(e) {}
 }
 
+function loadSemesterRanges() {
+  try {
+    const raw = localStorage.getItem('sp-semester-ranges');
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(r => r && r.label && r.start && r.end);
+  } catch(e) {
+    return [];
+  }
+}
+
+function persistSemesterRanges() {
+  try { localStorage.setItem('sp-semester-ranges', JSON.stringify(customSemesterRanges)); } catch(e) {}
+}
+
+function fmtRangeLabel(start, end) {
+  const s = new Date(start + 'T00:00:00');
+  const e = new Date(end + 'T00:00:00');
+  const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${fmt(s)} - ${fmt(e)}, ${s.getFullYear()}`;
+}
+
+function defaultSemesterRanges() {
+  const seen = new Set();
+  const ranges = [];
+  getSelectedDatasets().forEach(ds => {
+    if (!ds.dateRange) return;
+    const start = dateStr(ds.dateRange.min);
+    const end = dateStr(ds.dateRange.max);
+    const key = start + '|' + end;
+    if (seen.has(key)) return;
+    seen.add(key);
+    ranges.push({
+      label: ds.snapshotName || ds.label || fmtRangeLabel(start, end),
+      start,
+      end,
+    });
+  });
+  if (!ranges.length) {
+    const dr = getDateRange(allBookings);
+    if (dr) {
+      const start = dateStr(dr.min);
+      const end = dateStr(dr.max);
+      ranges.push({ label: fmtRangeLabel(start, end), start, end });
+    }
+  }
+  return ranges;
+}
+
+function activeSemesterRanges() {
+  const ranges = customSemesterRanges.length ? customSemesterRanges : defaultSemesterRanges();
+  return ranges
+    .filter(r => r && r.label && r.start && r.end)
+    .map(r => ({ ...r, semMon: getMondayOf(new Date(r.start + 'T00:00:00')) }));
+}
+
+function bookingsForSemester(bookings, range) {
+  if (!range) return bookings;
+  const start = new Date(range.start + 'T00:00:00');
+  const end = new Date(range.end + 'T23:59:59');
+  return bookings.filter(b => b.bookingDay >= start && b.bookingDay <= end);
+}
+
+function semesterWeekNum(b, range) {
+  const semMon = range?.semMon || getMondayOf(b.bookingDay);
+  return Math.floor((b.bookingDay - semMon) / (7 * 86400000)) + 1;
+}
+
+function renderSemesterTabs(containerId, chartKey, renderFn) {
+  const ranges = activeSemesterRanges();
+  const el = document.getElementById(containerId);
+  if (!el) return null;
+  if (ranges.length <= 1) {
+    el.innerHTML = '';
+    heatmapSemesterTabs[chartKey] = 0;
+    return ranges[0] || null;
+  }
+  let active = Math.min(heatmapSemesterTabs[chartKey] || 0, ranges.length - 1);
+  heatmapSemesterTabs[chartKey] = active;
+  el.innerHTML = ranges.map((r, i) =>
+    `<button class="semester-tab${i===active?' active':''}" title="${escHtml(r.label)}: ${r.start} to ${r.end}" onclick="heatmapSemesterTabs.${chartKey}=${i};${renderFn}()">${escHtml(r.label)}</button>`
+  ).join('');
+  return ranges[active];
+}
+
+function renderSemesterRangeEditor() {
+  const el = document.getElementById('semester-ranges');
+  if (!el) return;
+  const ranges = activeSemesterRanges();
+  if (!ranges.length) {
+    el.innerHTML = '<div class="section-sub">No date ranges available yet.</div>';
+    return;
+  }
+  el.innerHTML = `<div class="semester-range-grid">${ranges.map((r, i) => `
+    <input type="text" value="${escHtml(r.label).replace(/"/g,'&quot;')}" onchange="setSemesterRange(${i}, 'label', this.value)">
+    <input type="date" value="${r.start}" onchange="setSemesterRange(${i}, 'start', this.value)">
+    <input type="date" value="${r.end}" onchange="setSemesterRange(${i}, 'end', this.value)">
+    <button class="icon-btn" title="Remove range" onclick="removeSemesterRange(${i})">&times;</button>
+  `).join('')}</div>`;
+}
+
+function ensureEditableSemesterRanges() {
+  if (!customSemesterRanges.length) customSemesterRanges = defaultSemesterRanges();
+}
+
+function setSemesterRange(idx, field, value) {
+  ensureEditableSemesterRanges();
+  if (!customSemesterRanges[idx]) return;
+  customSemesterRanges[idx][field] = value.trim ? value.trim() : value;
+  persistSemesterRanges();
+  renderSemesterRangeEditor();
+  renderCurrentTab();
+}
+
+function addSemesterRange() {
+  ensureEditableSemesterRanges();
+  const dr = getDateRange(allBookings);
+  const start = dr ? dateStr(dr.min) : '';
+  const end = dr ? dateStr(dr.max) : '';
+  customSemesterRanges.push({ label: `Semester ${customSemesterRanges.length + 1}`, start, end });
+  persistSemesterRanges();
+  renderSemesterRangeEditor();
+  renderCurrentTab();
+}
+
+function removeSemesterRange(idx) {
+  ensureEditableSemesterRanges();
+  customSemesterRanges.splice(idx, 1);
+  persistSemesterRanges();
+  heatmapSemesterTabs.hm1 = 0;
+  heatmapSemesterTabs.hm2 = 0;
+  renderSemesterRangeEditor();
+  renderCurrentTab();
+}
+
+function resetSemesterRanges() {
+  customSemesterRanges = [];
+  persistSemesterRanges();
+  heatmapSemesterTabs.hm1 = 0;
+  heatmapSemesterTabs.hm2 = 0;
+  renderSemesterRangeEditor();
+  renderCurrentTab();
+}
+
 function checkedValues(containerId) {
   return [...document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)].map(c => c.value);
 }
@@ -1208,7 +1388,9 @@ function captureViewState() {
       hm1Metric: document.getElementById('hm1-metric')?.value || 'hours',
       hm2Metric: document.getElementById('hm2-metric')?.value || 'hours',
       hm3Metric: document.getElementById('hm3-metric')?.value || 'hours',
+      semesterTabs: { ...heatmapSemesterTabs },
     },
+    semesterRanges: customSemesterRanges,
     rooms: {
       search: document.getElementById('rooms-search')?.value || '',
       sort: document.getElementById('rooms-sort')?.value || 'util-desc',
@@ -1251,6 +1433,11 @@ function restoreViewState(state) {
   if (document.getElementById('hm1-metric')) document.getElementById('hm1-metric').value = state.heatmaps?.hm1Metric || 'hours';
   if (document.getElementById('hm2-metric')) document.getElementById('hm2-metric').value = state.heatmaps?.hm2Metric || 'hours';
   if (document.getElementById('hm3-metric')) document.getElementById('hm3-metric').value = state.heatmaps?.hm3Metric || 'hours';
+  if (state.heatmaps?.semesterTabs) heatmapSemesterTabs = { ...heatmapSemesterTabs, ...state.heatmaps.semesterTabs };
+  if (Array.isArray(state.semesterRanges)) {
+    customSemesterRanges = state.semesterRanges.filter(r => r && r.label && r.start && r.end);
+    persistSemesterRanges();
+  }
   onCutoffChange();
 
   if (document.getElementById('rooms-search')) document.getElementById('rooms-search').value = state.rooms?.search || '';
@@ -1655,7 +1842,8 @@ function makeLegend(containerId) {
 function renderHM1() {
   const metric = document.getElementById('hm1-metric').value;
   const showVals = document.getElementById('hm-show-vals')?.checked || false;
-  const b = analyticsBookings(filteredBookings);
+  const range = renderSemesterTabs('hm1-semester-tabs', 'hm1', 'renderHM1');
+  const b = analyticsBookings(bookingsForSemester(filteredBookings, range));
   const HOURS = [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5];
   const DAYS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const HLBL  = h => h===0?'12a':h<12?h+'a':h===12?'12p':(h-12)+'p';
@@ -1697,16 +1885,17 @@ function renderHM1() {
 function renderHM2() {
   const metric = document.getElementById('hm2-metric').value;
   const showVals = document.getElementById('hm-show-vals')?.checked || false;
-  const b = analyticsBookings(filteredBookings);
+  const range = renderSemesterTabs('hm2-semester-tabs', 'hm2', 'renderHM2');
+  const b = analyticsBookings(bookingsForSemester(filteredBookings, range));
   const AVAIL_PER_WEEK = 21 * 7; // 147h
 
-  const weeks = [...new Set(b.map(x=>x.weekNum))].sort((a,z)=>a-z);
+  const weeks = [...new Set(b.map(x=>semesterWeekNum(x, range)))].sort((a,z)=>a-z);
   const roomKeys = [...new Set(b.map(x=>x.roomKey))].sort();
 
   const mat = {};
   roomKeys.forEach(k => { mat[k] = {}; weeks.forEach(w => mat[k][w]={c:0,h:0}); });
   b.forEach(x => {
-    const cell = mat[x.roomKey]?.[x.weekNum];
+    const cell = mat[x.roomKey]?.[semesterWeekNum(x, range)];
     if (cell) { cell.c++; cell.h += bookedHours(x); }
   });
 
@@ -1859,19 +2048,35 @@ function roomSortCol(col) {
 // TRENDS (SVG charts)
 // =====================================================================
 function renderTrends() {
-  const b = analyticsBookings(filteredBookings);
+  renderSemesterRangeEditor();
+  const ranges = activeSemesterRanges();
+  const trendSource = ranges.length
+    ? ranges.flatMap((r, i) => bookingsForSemester(filteredBookings, r).map(x => ({ ...x, _semIdx: i, _semWeek: semesterWeekNum(x, r) })))
+    : filteredBookings;
+  const b = analyticsBookings(trendSource);
   const byWeek = {}, byWeekH = {};
-  b.forEach(x => { byWeek[x.weekNum]=(byWeek[x.weekNum]||0)+1; byWeekH[x.weekNum]=(byWeekH[x.weekNum]||0)+bookedHours(x); });
+  const weekOf = x => x._semWeek || x.weekNum;
+  b.forEach(x => { const w = weekOf(x); byWeek[w]=(byWeek[w]||0)+1; byWeekH[w]=(byWeekH[w]||0)+bookedHours(x); });
   const weeks = Object.keys(byWeek).map(Number).sort((a,z)=>a-z);
 
-  svgBar('chart-weekly', weeks.map(w=>`W${w}`), weeks.map(w=>byWeek[w]), '#4f8ef7', 160);
+  if (ranges.length > 1) {
+    const colors = ['#4f8ef7','#7b5ea7','#4abf8a','#e0a85c','#e05c5c','#40bfc1'];
+    const series = ranges.map((r, i) => ({
+      label: r.label.length > 18 ? r.label.slice(0, 16) + '...' : r.label,
+      color: colors[i % colors.length],
+      vals: weeks.map(w => b.filter(x => x._semIdx === i && weekOf(x) === w).length),
+    }));
+    svgGroupedBar('chart-weekly', weeks.map(w=>`W${w}`), series, 160);
+  } else {
+    svgBar('chart-weekly', weeks.map(w=>`W${w}`), weeks.map(w=>byWeek[w]), '#4f8ef7', 160);
+  }
 
   // Room type stacked
   const TYPES = [...new Set(ROOM_META.map(r=>r.type))];
   const TYPE_CLR = {'Studio':'#4f8ef7','Production Suite':'#7b5ea7','Edit Suite':'#4abf8a','Other':'#525c72'};
   const typeW = {};
   TYPES.forEach(t => { typeW[t]={}; weeks.forEach(w=>typeW[t][w]=0); });
-  b.forEach(x => { if(x.meta&&typeW[x.meta.type]) typeW[x.meta.type][x.weekNum]=(typeW[x.meta.type][x.weekNum]||0)+bookedHours(x); });
+  b.forEach(x => { const w = weekOf(x); if(x.meta&&typeW[x.meta.type]) typeW[x.meta.type][w]=(typeW[x.meta.type][w]||0)+bookedHours(x); });
   svgStacked('chart-type-trend', weeks.map(w=>`W${w}`), TYPES.map(t=>({label:t,color:TYPE_CLR[t]||'#525c72',vals:weeks.map(w=>typeW[t][w]||0)})), 150);
 
   // Top 5 event types stacked
@@ -1880,7 +2085,7 @@ function renderTrends() {
   const EVT_CLR = ['#4f8ef7','#7b5ea7','#4abf8a','#e0a85c','#e05c5c'];
   const evtW = {};
   top5evts.forEach(e=>{evtW[e]={};weeks.forEach(w=>evtW[e][w]=0);});
-  b.forEach(x=>{ const evt=analyticsEventType(x); if(evtW[evt]) evtW[evt][x.weekNum]=(evtW[evt][x.weekNum]||0)+1; });
+  b.forEach(x=>{ const evt=analyticsEventType(x); const w = weekOf(x); if(evtW[evt]) evtW[evt][w]=(evtW[evt][w]||0)+1; });
   svgStacked('chart-evt-trend', weeks.map(w=>`W${w}`), top5evts.map((e,i)=>({label:e.length>16?e.slice(0,14)+'…':e,color:EVT_CLR[i],vals:weeks.map(w=>evtW[e][w]||0)})), 150);
 
   // Daily dist
@@ -1913,6 +2118,41 @@ function svgBar(id, labels, vals, color, h) {
     s+=`<rect x="${x.toFixed(1)}" y="${(PAD.t+cH-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh,0).toFixed(1)}" fill="${color}" rx="2" opacity="0.85"
       onmouseenter="tip(event,'${tipTxt.replace(/'/g,'&#39;')}')" onmouseleave="untip()" style="cursor:default"/>`;
     if(labels.length<=24) s+=`<text x="${(x+bw/2).toFixed(1)}" y="${(PAD.t+cH+14).toFixed(1)}" text-anchor="middle" fill="#525c72" font-size="9" font-family="DM Mono,monospace">${lbl}</text>`;
+  });
+  s+='</svg>';
+  el.innerHTML=s;
+}
+
+function svgGroupedBar(id, labels, series, h) {
+  const el = document.getElementById(id);
+  if (!el||!labels.length) return;
+  const W = el.offsetWidth||600, H=h;
+  const PAD={t:8,r:120,b:24,l:36};
+  const cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;
+  const maxV=Math.max(...series.flatMap(sr=>sr.vals),1);
+  const groupW=cW/labels.length;
+  const bw=Math.max(2,(groupW-4)/Math.max(series.length,1)-1);
+  let s=`<svg width="${W}" height="${H}" style="overflow:visible">`;
+  for(let i=0;i<=4;i++){
+    const y=PAD.t+cH*(1-i/4);
+    s+=`<line x1="${PAD.l}" y1="${y}" x2="${PAD.l+cW}" y2="${y}" stroke="#252a38" stroke-width="1" stroke-opacity="0.3"/>`;
+    s+=`<text x="${PAD.l-3}" y="${y+3}" text-anchor="end" fill="#525c72" font-size="9" font-family="DM Mono,monospace">${Math.round(maxV*i/4)}</text>`;
+  }
+  labels.forEach((lbl,i)=>{
+    const gx=PAD.l+i*groupW+2;
+    series.forEach((sr,j)=>{
+      const val=sr.vals[i]||0;
+      const bh=(val/maxV)*cH;
+      const x=gx+j*(bw+1);
+      const tipTxt=`${lbl} / ${sr.label}: ${val}`;
+      s+=`<rect x="${x.toFixed(1)}" y="${(PAD.t+cH-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh,0).toFixed(1)}" fill="${sr.color}" rx="1" opacity="0.85"
+        onmouseenter="tip(event,'${tipTxt.replace(/'/g,'&#39;')}')" onmouseleave="untip()" style="cursor:default"/>`;
+    });
+    if(labels.length<=24) s+=`<text x="${(PAD.l+i*groupW+groupW/2).toFixed(1)}" y="${(PAD.t+cH+14).toFixed(1)}" text-anchor="middle" fill="#525c72" font-size="9" font-family="DM Mono,monospace">${lbl}</text>`;
+  });
+  series.forEach((sr,i)=>{
+    s+=`<rect x="${W-PAD.r+8}" y="${PAD.t+i*16}" width="10" height="10" fill="${sr.color}" rx="2"/>`;
+    s+=`<text x="${W-PAD.r+22}" y="${PAD.t+i*16+9}" fill="#8892aa" font-size="9" font-family="DM Mono,monospace">${sr.label}</text>`;
   });
   s+='</svg>';
   el.innerHTML=s;
@@ -3428,6 +3668,67 @@ function configureCopyPNGButton(btn, subject='chart') {
   btn.innerHTML = canCopy ? '📋' : '⬇';
 }
 
+function shouldIgnoreForPNG(el) {
+  if (!el || !el.classList) return false;
+  if (el.classList.contains('copy-png-btn')) return true;
+  if (el.closest('.section-hdr') && el.matches('button, select, input, label')) return true;
+  if (el.closest('.hm-controls') && el.matches('button, select, input, label')) return true;
+  return false;
+}
+
+function shrinkPNGClone(doc, captureId) {
+  const clone = doc.querySelector(`[data-png-capture="${captureId}"]`);
+  if (!clone) return;
+
+  clone.querySelectorAll('button, select, input, label').forEach(el => {
+    if (shouldIgnoreForPNG(el)) el.remove();
+  });
+
+  clone.style.display = 'inline-block';
+  clone.style.width = 'fit-content';
+  clone.style.minWidth = '0';
+  clone.style.maxWidth = 'none';
+  clone.style.borderRight = '0';
+  clone.style.borderTopRightRadius = '0';
+  clone.style.borderBottomRightRadius = '0';
+
+  clone.querySelectorAll('.section-hdr').forEach(el => {
+    el.style.display = 'block';
+    el.style.width = 'fit-content';
+    el.style.maxWidth = 'none';
+  });
+  clone.querySelectorAll('.hm1-layout, .two-col').forEach(el => {
+    el.style.width = 'fit-content';
+    el.style.maxWidth = 'none';
+  });
+  clone.querySelectorAll('.heatmap-wrap, .week-hm-wrap, .chart-svg-wrap').forEach(el => {
+    el.style.width = 'fit-content';
+    el.style.maxWidth = 'none';
+    el.style.overflow = 'visible';
+  });
+}
+
+function getPNGClipWidth(card) {
+  const cardRect = card.getBoundingClientRect();
+  const selectors = [
+    '.section-title', '.section-sub', '.semester-tabs',
+    '.heatmap-table', '.week-hm-table', '.late-table', '.data-table', '.dv-table',
+    '.hm-legend', '.bar-row', '.stat-card',
+    'svg', 'canvas', 'img'
+  ].join(',');
+  let right = 0;
+  card.querySelectorAll(selectors).forEach(el => {
+    if (shouldIgnoreForPNG(el) || el.closest('.copy-png-btn')) return;
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden') return;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    right = Math.max(right, r.right - cardRect.left);
+  });
+  if (!right) return Math.ceil(cardRect.width);
+  return Math.min(Math.ceil(right + 14), Math.ceil(cardRect.width - 2));
+}
+
 // Crop a canvas to its actual content by scanning from the right for the last
 // non-background, non-border pixel, then adding visual padding.
 function cropCanvasToContent(canvas) {
@@ -3479,15 +3780,20 @@ async function copyCardAsPNG(btn) {
     // Resolve CSS variables to computed values for html2canvas
     const cs = getComputedStyle(document.documentElement);
     const bg = cs.getPropertyValue('--surface').trim() || '#13161d';
+    const captureId = 'png-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+    const clipWidth = getPNGClipWidth(card);
+    card.setAttribute('data-png-capture', captureId);
 
     const rawCanvas = await html2canvas(card, {
       backgroundColor: bg,
       scale: 2, // 2× for retina-quality PNGs
       logging: false,
       useCORS: true,
-      // Ignore the copy button itself in the capture
-      ignoreElements: el => el.classList && el.classList.contains('copy-png-btn'),
+      width: clipWidth,
+      ignoreElements: shouldIgnoreForPNG,
+      onclone: doc => shrinkPNGClone(doc, captureId),
     });
+    card.removeAttribute('data-png-capture');
 
     const canvas = cropCanvasToContent(rawCanvas);
 
@@ -3518,6 +3824,7 @@ async function copyCardAsPNG(btn) {
       }
     }, 'image/png');
   } catch (err) {
+    card.removeAttribute('data-png-capture');
     console.error('Copy PNG failed:', err);
     btn.innerHTML = '✗';
     btn.classList.remove('busy');
