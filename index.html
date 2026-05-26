@@ -835,18 +835,21 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
         <div class="range-compare-controls">
           <div class="range-compare-box" id="rc-box-0">
             <div class="range-compare-head"><label><input type="checkbox" id="rc-enabled-0" checked onchange="onRangeCompareToggle(0)"> Range 1</label></div>
+            <select id="rc-preset-0" onchange="applyRangeComparePreset(0, this.value)"></select>
             <input type="text" id="rc-label-0" placeholder="Label" value="Range 1" oninput="renderRangeComparison()">
             <input type="date" id="rc-start-0" onchange="renderRangeComparison()">
             <input type="date" id="rc-end-0" onchange="renderRangeComparison()">
           </div>
           <div class="range-compare-box" id="rc-box-1" style="display:none;">
             <div class="range-compare-head"><label><input type="checkbox" id="rc-enabled-1" checked onchange="onRangeCompareToggle(1)"> Range 2</label></div>
+            <select id="rc-preset-1" onchange="applyRangeComparePreset(1, this.value)"></select>
             <input type="text" id="rc-label-1" placeholder="Label" value="Range 2" oninput="renderRangeComparison()">
             <input type="date" id="rc-start-1" onchange="renderRangeComparison()">
             <input type="date" id="rc-end-1" onchange="renderRangeComparison()">
           </div>
           <div class="range-compare-box" id="rc-box-2" style="display:none;">
             <div class="range-compare-head"><label><input type="checkbox" id="rc-enabled-2" onchange="onRangeCompareToggle(2)"> Range 3</label></div>
+            <select id="rc-preset-2" onchange="applyRangeComparePreset(2, this.value)"></select>
             <input type="text" id="rc-label-2" placeholder="Label (optional)" value="Range 3" oninput="renderRangeComparison()">
             <input type="date" id="rc-start-2" onchange="renderRangeComparison()">
             <input type="date" id="rc-end-2" onchange="renderRangeComparison()">
@@ -2231,6 +2234,7 @@ function renderHistory() {
 
 function syncRangeCompareFromDatasets() {
   const selected = getSelectedDatasets();
+  renderRangeComparePresetSelects();
 
   // Collect distinct date ranges from selected datasets
   const seen = new Set();
@@ -2249,8 +2253,9 @@ function syncRangeCompareFromDatasets() {
       return `${fmt(s)} – ${fmt(e)}, ${s.getFullYear()}`;
     })();
     ranges.push({ start: dateStr(start), end: dateStr(end), label });
-    if (ranges.length === 3) break;
   }
+  ranges.sort(compareRangeDesc);
+  ranges.splice(3);
 
   // Fallback: no per-dataset ranges, use overall data range as one range
   if (!ranges.length) {
@@ -2285,6 +2290,58 @@ function syncRangeCompareFromDatasets() {
       setRangeCompareSlotVisible(i, false);
     }
   }
+  updateRangeCompareControls();
+  renderRangeComparison();
+}
+
+function getRangeComparePresetOptions() {
+  const items = [];
+  const seen = new Set();
+  const add = (id, label, start, end) => {
+    if (!label || !start || !end) return;
+    const key = `${label}|${start}|${end}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    items.push({ id, label, start, end });
+  };
+
+  datasets.forEach((ds, i) => {
+    if (!ds.dateRange) return;
+    add(`dataset:${i}`, ds.snapshotName || ds.fileName || ds.label || `Dataset ${i + 1}`, dateStr(ds.dateRange.min), dateStr(ds.dateRange.max));
+  });
+
+  cloudSnapshots.forEach((s, i) => {
+    const range = rangeSortKey(s);
+    add(`snapshot:${i}`, s.name || `Snapshot ${i + 1}`, range.start, range.end);
+  });
+
+  return items.sort(compareRangeDesc);
+}
+
+function renderRangeComparePresetSelects() {
+  const options = getRangeComparePresetOptions();
+  for (let i = 0; i < 3; i++) {
+    const sel = document.getElementById(`rc-preset-${i}`);
+    if (!sel) continue;
+    sel.innerHTML = '<option value="">Select snapshot or dataset...</option>' +
+      options.map(o => `<option value="${escHtml(o.id)}">${escHtml(o.label)} (${o.start} to ${o.end})</option>`).join('');
+    sel.value = '';
+  }
+}
+
+function applyRangeComparePreset(slot, value) {
+  if (!value) return;
+  const preset = getRangeComparePresetOptions().find(o => o.id === value);
+  if (!preset) return;
+  setRangeCompareSlotVisible(slot, true);
+  const cEl = document.getElementById(`rc-enabled-${slot}`);
+  const lEl = document.getElementById(`rc-label-${slot}`);
+  const sEl = document.getElementById(`rc-start-${slot}`);
+  const eEl = document.getElementById(`rc-end-${slot}`);
+  if (cEl) cEl.checked = true;
+  if (lEl) lEl.value = preset.label;
+  if (sEl) sEl.value = preset.start;
+  if (eEl) eEl.value = preset.end;
   updateRangeCompareControls();
   renderRangeComparison();
 }
@@ -3482,6 +3539,7 @@ function renderCloudSnapList() {
     </div>`;
   }).join('');
   getSnapListEls().forEach(el => { el.innerHTML = html; });
+  renderRangeComparePresetSelects();
 }
 
 function renderLoadedDatasetsList() {
@@ -3510,6 +3568,7 @@ function renderLoadedDatasetsList() {
     </div>`;
   }).join('');
   els.forEach(el => { el.innerHTML = html; });
+  renderRangeComparePresetSelects();
 }
 
 function toggleLocalDataset(idx, checked) {
