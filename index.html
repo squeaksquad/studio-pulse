@@ -1863,6 +1863,50 @@ function makeLegend(containerId) {
   document.getElementById(containerId).className = 'hm-legend';
 }
 
+function getSemesterRangesForScale(activeRange) {
+  const ranges = activeSemesterRanges();
+  return ranges.length ? ranges : (activeRange ? [activeRange] : [null]);
+}
+
+function maxHM1Value(metric, ranges) {
+  let maxV = 0;
+  const HOURS = [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5];
+  ranges.forEach(range => {
+    const mat = Array.from({length:7},()=>Object.fromEntries(HOURS.map(h=>[h,{c:0,h:0}])));
+    analyticsBookings(bookingsForSemester(filteredBookings, range)).forEach(x => {
+      const cell = mat[x.dow]?.[x.startHour];
+      if (cell) { cell.c++; cell.h += bookedHours(x); }
+    });
+    mat.forEach(row => HOURS.forEach(h => {
+      const v = metric === 'count' ? row[h].c : row[h].h;
+      if (v > maxV) maxV = v;
+    }));
+  });
+  return maxV;
+}
+
+function maxHM2Value(metric, ranges) {
+  let maxV = 0;
+  const AVAIL_PER_WEEK = 21 * 7;
+  ranges.forEach(range => {
+    const b = analyticsBookings(bookingsForSemester(filteredBookings, range));
+    const mat = {};
+    b.forEach(x => {
+      const key = x.roomKey;
+      const week = semesterWeekNum(x, range);
+      if (!mat[key]) mat[key] = {};
+      if (!mat[key][week]) mat[key][week] = { c: 0, h: 0 };
+      mat[key][week].c++;
+      mat[key][week].h += bookedHours(x);
+    });
+    Object.values(mat).forEach(weeks => Object.values(weeks).forEach(cell => {
+      const v = metric === 'count' ? cell.c : metric === 'hours' ? cell.h : cell.h / AVAIL_PER_WEEK * 100;
+      if (v > maxV) maxV = v;
+    }));
+  });
+  return maxV;
+}
+
 // =====================================================================
 // HM1: DOW × Hour
 // =====================================================================
@@ -1882,8 +1926,7 @@ function renderHM1() {
     if (cell) { cell.c++; cell.h += bookedHours(x); }
   });
 
-  let maxV = 0;
-  DAYS.forEach((_,d)=>HOURS.forEach(h=>{ const v=metric==='count'?mat[d][h].c:mat[d][h].h; if(v>maxV)maxV=v; }));
+  const maxV = maxHM1Value(metric, getSemesterRangesForScale(range));
 
   let html = '<table class="heatmap-table"><thead><tr><th></th>';
   HOURS.forEach(h => html += `<th>${HLBL(h)}</th>`);
@@ -1926,11 +1969,7 @@ function renderHM2() {
     if (cell) { cell.c++; cell.h += bookedHours(x); }
   });
 
-  let maxV = 0;
-  roomKeys.forEach(k => weeks.forEach(w => {
-    const v = metric==='count'?mat[k][w].c : metric==='hours'?mat[k][w].h : mat[k][w].h/AVAIL_PER_WEEK*100;
-    if(v>maxV) maxV=v;
-  }));
+  const maxV = maxHM2Value(metric, getSemesterRangesForScale(range));
 
   let html = '<table class="week-hm-table"><thead><tr><th style="text-align:right;padding-right:7px;"></th>';
   weeks.forEach(w => html += `<th>W${w}</th>`);
