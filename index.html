@@ -1159,6 +1159,14 @@ function isTechClosedBooking(b) {
   return t.includes('tech time') && t.includes('closed');
 }
 
+function isTechTimeBooking(b) {
+  return bookingText(b).includes('tech time');
+}
+
+function isRoomOfflineBooking(b) {
+  return (b.eventType || '').trim().toLowerCase() === 'room off line';
+}
+
 function isUnavailableClosedBooking(b) {
   if (isTechClosedBooking(b)) return false;
   const eventName = (b.eventName || '').trim().toLowerCase();
@@ -1168,7 +1176,7 @@ function isUnavailableClosedBooking(b) {
 }
 
 function isCountedBooking(b) {
-  return !isUnavailableClosedBooking(b);
+  return !isUnavailableClosedBooking(b) && !isTechClosedBooking(b);
 }
 
 function bookedHours(b) {
@@ -1177,6 +1185,10 @@ function bookedHours(b) {
 
 function analyticsBookings(bookings) {
   return bookings.filter(isCountedBooking);
+}
+
+function heatmapBookings(bookings) {
+  return analyticsBookings(bookings).filter(b => !isTechTimeBooking(b) && !isRoomOfflineBooking(b));
 }
 
 function analyticsEventType(b) {
@@ -1873,7 +1885,7 @@ function maxHM1Value(metric, ranges) {
   const HOURS = [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5];
   ranges.forEach(range => {
     const mat = Array.from({length:7},()=>Object.fromEntries(HOURS.map(h=>[h,{c:0,h:0}])));
-    analyticsBookings(bookingsForSemester(filteredBookings, range)).forEach(x => {
+    heatmapBookings(bookingsForSemester(filteredBookings, range)).forEach(x => {
       const cell = mat[x.dow]?.[x.startHour];
       if (cell) { cell.c++; cell.h += bookedHours(x); }
     });
@@ -1889,7 +1901,7 @@ function maxHM2Value(metric, ranges) {
   let maxV = 0;
   const AVAIL_PER_WEEK = 21 * 7;
   ranges.forEach(range => {
-    const b = analyticsBookings(bookingsForSemester(filteredBookings, range));
+    const b = heatmapBookings(bookingsForSemester(filteredBookings, range));
     const mat = {};
     b.forEach(x => {
       const key = x.roomKey;
@@ -1914,7 +1926,7 @@ function renderHM1() {
   const metric = document.getElementById('hm1-metric').value;
   const showVals = document.getElementById('hm-show-vals')?.checked || false;
   const range = renderSemesterTabs('hm1-semester-tabs', 'hm1', 'renderHM1');
-  const b = analyticsBookings(bookingsForSemester(filteredBookings, range));
+  const b = heatmapBookings(bookingsForSemester(filteredBookings, range));
   const HOURS = [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5];
   const DAYS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const HLBL  = h => h===0?'12a':h<12?h+'a':h===12?'12p':(h-12)+'p';
@@ -1956,7 +1968,7 @@ function renderHM2() {
   const metric = document.getElementById('hm2-metric').value;
   const showVals = document.getElementById('hm-show-vals')?.checked || false;
   const range = renderSemesterTabs('hm2-semester-tabs', 'hm2', 'renderHM2');
-  const b = analyticsBookings(bookingsForSemester(filteredBookings, range));
+  const b = heatmapBookings(bookingsForSemester(filteredBookings, range));
   const AVAIL_PER_WEEK = 21 * 7; // 147h
 
   const weeks = [...new Set(b.map(x=>semesterWeekNum(x, range)))].sort((a,z)=>a-z);
@@ -2020,7 +2032,7 @@ function renderHM3() {
   const cutoff = getCutoffMin();
   const showVals = document.getElementById('hm-show-vals')?.checked || false;
   const metric = document.getElementById('hm3-metric')?.value || 'hours';
-  const counted = analyticsBookings(filteredBookings);
+  const counted = heatmapBookings(filteredBookings);
   const b = counted.filter(x => isAfterCutoff(x.startMin, cutoff));
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const BLDG = {'136':'Bldg 136','150':'Bldg 150','160A':'160 \u00b7 A Level','160B':'160 \u00b7 B Level','1108':'1108','921':'Bldg 921'};
@@ -2119,7 +2131,7 @@ function renderTrends() {
   const trendSource = ranges.length
     ? ranges.flatMap((r, i) => bookingsForSemester(filteredBookings, r).map(x => ({ ...x, _semIdx: i, _semWeek: semesterWeekNum(x, r) })))
     : filteredBookings;
-  const b = analyticsBookings(trendSource);
+  const b = heatmapBookings(trendSource);
   const byWeek = {}, byWeekH = {};
   const weekOf = x => x._semWeek || x.weekNum;
   b.forEach(x => { const w = weekOf(x); byWeek[w]=(byWeek[w]||0)+1; byWeekH[w]=(byWeekH[w]||0)+bookedHours(x); });
