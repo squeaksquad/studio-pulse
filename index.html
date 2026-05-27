@@ -141,7 +141,15 @@ select.inline { width: auto; margin: 0; font-size: 10px; padding: 4px 7px; }
 .hm1-layout > .heatmap-wrap, .hm1-layout > div:first-child { flex-shrink: 0; }
 .hm1-late-panel { flex: 1; min-width: 260px; max-width: 420px; }
 .hm1-late-panel .section-sub { margin-bottom: 8px; }
-@media (max-width: 1200px) { .hm1-layout { flex-direction: column; } .hm1-late-panel { max-width: none; } }
+@media (max-width: 1200px) {
+  .hm1-layout { flex-direction: column; }
+  .hm1-layout > div:first-child {
+    width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .hm1-late-panel { max-width: none; }
+}
 .late-table { width: 100%; border-collapse: collapse; font-size: 10px; font-family: var(--sans); }
 .late-table th { text-align: left; padding: 5px 7px; border-bottom: 1px solid var(--border); color: var(--text3); font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 .late-table th.num { text-align: right; }
@@ -409,11 +417,6 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
 
   .main { padding: 12px; }
   .card { padding: 12px 14px; overflow: hidden; }
-  .hm1-layout > div:first-child {
-    width: 100%;
-    min-width: 0;
-    flex-shrink: 1;
-  }
 
   /* Heatmap scroll indicator: fade right edge until scrolled to end */
   .heatmap-wrap, .week-hm-wrap {
