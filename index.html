@@ -628,7 +628,7 @@ th.sort-desc .sort-ind::after { content: ' ↓'; color: var(--accent); }
       <div style="font-size:36px;">🎛</div>
       <div style="font-family:var(--sans);font-size:15px;font-weight:700;color:var(--text2);">No data loaded</div>
       <div style="font-size:12px;text-align:center;max-width:280px;line-height:1.6;">Upload an AAOF schedule export CSV using the sidebar, or load a previously exported snapshot.</div>
-      <a id="signin-link" href="https://berklee.bryandimaio.com" target="_blank" rel="noopener" style="display:none;margin-top:4px;font-size:12px;color:var(--accent);font-family:var(--sans);text-decoration:none;border:1px solid var(--accent);border-radius:4px;padding:6px 14px;">Sign in at berklee.bryandimaio.com →</a>
+      <button class="btn secondary" id="snap-connect-btn" onclick="connectSnapStore()" style="display:none;width:auto;margin-top:4px;">Connect Snapshot Folder</button>
     </div>
     <div id="data-view" style="display:none;flex-direction:column;gap:16px;">
     <div class="tabs">
@@ -1160,10 +1160,10 @@ window.addEventListener('DOMContentLoaded', () => {
     initDataView();
     if (PREBAKED_STATE) restoreViewState(PREBAKED_STATE);
   } else {
-    // No embedded data — hydrate from saved cloud snapshots when possible.
+    // No embedded data — hydrate from the snapshot folder when possible.
     document.getElementById('no-data').style.display = 'flex';
     document.getElementById('data-view').style.display = 'none';
-    setNoDataMessage('Loading saved snapshots', 'Checking the saved snapshot archive for historical data.');
+    setNoDataMessage('Loading saved snapshots', 'Checking the snapshot folder for historical data.');
     autoLoadCloudSnapshots();
   }
 
@@ -2964,7 +2964,7 @@ function restoreSnapshotDatasets(nextDatasets, viewState, name='snapshot') {
 // =====================================================================
 // EXPORT SNAPSHOT
 // =====================================================================
-function exportSnapshot() {
+async function exportSnapshot() {
   const snap={
     version:1,
     exportedAt:new Date().toISOString(),
@@ -2976,12 +2976,14 @@ function exportSnapshot() {
       rows:ds.bookings.map(b=>[b.day,b.startMin,b.endMin,b.building,b.room,b.status,b.eventType,b.name,b.eventName||'',b.lastEditRaw||'',b.notes||''])
     }))
   };
-  const blob=new Blob([JSON.stringify(snap)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`studiopulse-snapshot-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const filename=`studiopulse-snapshot-${new Date().toISOString().slice(0,10)}.json`;
+  try {
+    const dir=await getSnapStore();
+    await writeSnapFile(dir,filename,JSON.stringify(snap));
+    showNotice(`Exported ${filename} to "${dir.name}"`);
+  } catch(e) {
+    showNotice(`Export failed: ${e.message}`,'var(--accent3)');
+  }
 }
 
 function openOfflineModal() {
@@ -3472,11 +3474,8 @@ function toggleRoomExpand(key) {
 window.addEventListener('resize',()=>{ if(currentTab==='trends') renderTrends(); });
 
 // =====================================================================
-// GITHUB PUSH (StudioPulse → Worker → studio-pulse-data repo)
-// Auth: Cloudflare Worker session cookie (set when signed into Worker dashboard)
+// OFFLINE HTML (self-contained copy of the app with embedded data)
 // =====================================================================
-
-const PULSE_WORKER_URL = 'https://berklee.bryandimaio.com';
 
 function scriptSafeJSON(value) {
   return JSON.stringify(value)
@@ -3565,13 +3564,122 @@ function buildOfflineHTML() {
 
 
 // =====================================================================
-// CLOUD SNAPSHOTS (Worker → GitHub repo)
-// Each snapshot is a self-contained offline HTML committed to
-// snapshots/{name}.html in the studio-pulse-data repo.
+// SAVED SNAPSHOTS (File System Access API → folder on the mounted SMB share)
+// Each snapshot is a self-contained offline HTML written to {name}.html
+// in the connected folder, with metadata in _index.json. Nothing is sent
+// over the network. The folder must contain a .studiopulse-store marker
+// file, so snapshots can't be saved to (or loaded from) an arbitrary folder.
 // =====================================================================
 let snapPanelOpen = false;
 let cloudSnapshots = [];
 let cloudSnapshotsLoading = false;
+
+const SNAP_STORE_MARKER = '.studiopulse-store';
+const SNAP_STORE_UNSUPPORTED = 'Saved snapshots need Chrome or Edge on a desktop — this browser cannot open the snapshot folder.';
+let snapDirHandle = null;
+
+function snapStoreSupported() {
+  return typeof window.showDirectoryPicker === 'function';
+}
+
+// The folder handle is remembered in IndexedDB so the share only has to be picked once.
+function snapStoreIdb(mode, op) {
+  return new Promise((resolve, reject) => {
+    const open = indexedDB.open('studiopulse', 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('kv');
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const tx = open.result.transaction('kv', mode);
+      const req = op(tx.objectStore('kv'));
+      tx.oncomplete = () => { open.result.close(); resolve(req.result); };
+      tx.onerror = () => { open.result.close(); reject(tx.error); };
+    };
+  });
+}
+
+async function restoreSnapStoreHandle() {
+  try { return (await snapStoreIdb('readonly', st => st.get('snapDir'))) || null; }
+  catch (e) { return null; }
+}
+
+async function assertSnapStore(handle) {
+  try { await handle.getFileHandle(SNAP_STORE_MARKER); }
+  catch (e) {
+    throw new Error(`"${handle.name}" is unavailable or has no ${SNAP_STORE_MARKER} file. Mount the SMB share, or create an empty file with that name in the share folder to mark it as the snapshot store.`);
+  }
+}
+
+// Returns the connected, verified snapshot folder, or throws with a user-facing message.
+async function getSnapStore() {
+  if (!snapStoreSupported()) throw new Error(SNAP_STORE_UNSUPPORTED);
+  if (!snapDirHandle) snapDirHandle = await restoreSnapStoreHandle();
+  if (!snapDirHandle) throw new Error('No snapshot folder connected.');
+  if (await snapDirHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+    throw new Error(`Access to "${snapDirHandle.name}" needs to be granted again.`);
+  }
+  await assertSnapStore(snapDirHandle);
+  return snapDirHandle;
+}
+
+// Must be called from a click — the browser only shows its folder prompts on a user gesture.
+async function connectSnapStore(forcePick) {
+  if (!snapStoreSupported()) { renderSnapStoreDisconnected(SNAP_STORE_UNSUPPORTED); return; }
+  try {
+    let handle = forcePick ? null : (snapDirHandle || await restoreSnapStoreHandle());
+    if (handle && await handle.requestPermission({ mode: 'readwrite' }) !== 'granted') handle = null;
+    if (handle) { try { await assertSnapStore(handle); } catch (e) { handle = null; } }
+    if (!handle) {
+      handle = await window.showDirectoryPicker({ id: 'studiopulse-snapshots', mode: 'readwrite' });
+      await assertSnapStore(handle);
+    }
+    snapDirHandle = handle;
+    try { await snapStoreIdb('readwrite', st => st.put(handle, 'snapDir')); } catch (e) {}
+    if (document.getElementById('no-data').style.display !== 'none') autoLoadCloudSnapshots();
+    else listCloudSnapshots();
+  } catch (e) {
+    if (e.name !== 'AbortError') renderSnapStoreDisconnected(e.message);
+  }
+}
+
+async function readSnapFile(dir, filename) {
+  return (await (await dir.getFileHandle(filename)).getFile()).text();
+}
+
+async function writeSnapFile(dir, filename, text) {
+  const writable = await (await dir.getFileHandle(filename, { create: true })).createWritable();
+  await writable.write(text);
+  await writable.close();
+}
+
+async function readSnapIndex(dir) {
+  try { return JSON.parse(await readSnapFile(dir, '_index.json')) || {}; }
+  catch (e) { return {}; }
+}
+
+// If meta is null, removes the entry (delete). Otherwise sets/updates it.
+async function updateSnapIndex(dir, name, meta) {
+  const index = await readSnapIndex(dir);
+  if (meta === null) delete index[name];
+  else index[name] = meta;
+  await writeSnapFile(dir, '_index.json', JSON.stringify(index, null, 2));
+}
+
+function snapStoreFooter() {
+  if (!snapDirHandle) return '';
+  return `<div class="snap-list-message">Folder: ${escHtml(snapDirHandle.name)} · <a href="#" style="color:var(--accent);" onclick="connectSnapStore(true);return false;">Change</a></div>`;
+}
+
+function renderSnapStoreDisconnected(msg) {
+  const canConnect = snapStoreSupported();
+  const btn = canConnect
+    ? '<button class="btn secondary" style="width:auto;font-size:11px;margin-top:6px;" onclick="connectSnapStore()">Connect Snapshot Folder</button>'
+    : '';
+  getSnapListEls().forEach(el => {
+    el.innerHTML = `<div class="snap-list-message error">${escHtml(msg)}</div>${btn}`;
+  });
+  const cb = document.getElementById('snap-connect-btn');
+  if (cb) cb.style.display = canConnect ? '' : 'none';
+}
 
 function toggleSnapPanel() {
   snapPanelOpen = !snapPanelOpen;
@@ -3612,23 +3720,24 @@ function renderSnapListMessage(text, isError) {
   });
 }
 
+async function loadSnapList(dir) {
+  const index = await readSnapIndex(dir);
+  const names = [];
+  for await (const [fname, h] of dir.entries()) {
+    // Skip dotfiles — macOS writes ._name.html sidecars on SMB shares
+    if (h.kind === 'file' && fname.endsWith('.html') && !fname.startsWith('.')) names.push(fname.slice(0, -5));
+  }
+  cloudSnapshots = names.map(name => ({ name, ...(index[name] || {}) })).sort(compareRangeDesc);
+  const cb = document.getElementById('snap-connect-btn');
+  if (cb) cb.style.display = 'none';
+  renderCloudSnapList();
+}
+
 async function listCloudSnapshots() {
   try {
-    const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshots`, { credentials: 'include' });
-    if (res.status === 401) {
-      const msg = 'Not signed in - open the Worker URL first.';
-      renderSnapListMessage(msg, true);
-      return;
-    }
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    cloudSnapshots = (data.snapshots || []).sort(compareRangeDesc);
-    renderCloudSnapList();
+    await loadSnapList(await getSnapStore());
   } catch (e) {
-    const msg = isLocalPreview()
-      ? `Local preview cannot read saved snapshots from ${PULSE_WORKER_URL}. Open the hosted app there, or upload a CSV/snapshot locally.`
-      : `Failed to list snapshots: ${e.message}`;
-    renderSnapListMessage(msg, true);
+    renderSnapStoreDisconnected(e.message);
   }
 }
 
@@ -3655,18 +3764,15 @@ async function autoLoadCloudSnapshots() {
   cloudSnapshotsLoading = true;
   try {
     renderSnapListMessage('Loading saved snapshots...');
-    const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshots`, { credentials: 'include' });
-    if (res.status === 401) {
-      setNoDataMessage('No data loaded', `Sign in at ${PULSE_WORKER_URL}, then reload to load saved snapshots.`);
-      renderSnapListMessage('Not signed in - open the Worker URL first.', true);
-      const sl = document.getElementById('signin-link');
-      if (sl) sl.style.display = '';
+    let dir;
+    try {
+      dir = await getSnapStore();
+    } catch (e) {
+      setNoDataMessage('No data loaded', `${e.message} You can also upload a CSV/XLSX directly.`);
+      renderSnapStoreDisconnected(e.message);
       return;
     }
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    cloudSnapshots = (data.snapshots || []).sort(compareRangeDesc);
-    renderCloudSnapList();
+    await loadSnapList(dir);
 
     if (!cloudSnapshots.length) {
       setNoDataMessage('No data loaded', 'No saved snapshots were found. Upload a CSV or save a snapshot to start.');
@@ -3677,10 +3783,7 @@ async function autoLoadCloudSnapshots() {
     let loaded = 0;
     for (const s of cloudSnapshots) {
       try {
-        const snapRes = await fetch(`${PULSE_WORKER_URL}/pulse/snapshot/${encodeURIComponent(s.name)}`, { credentials: 'include' });
-        if (!snapRes.ok) continue;
-        const html = await snapRes.text();
-        const embedded = getEmbeddedData(html);
+        const embedded = getEmbeddedData(await readSnapFile(dir, `${s.name}.html`));
         if (!embedded) continue;
         loaded += mergeEmbeddedSnapshot(s.name, embedded.rows, embedded.label, true);
       } catch(e) {
@@ -3697,12 +3800,8 @@ async function autoLoadCloudSnapshots() {
       setNoDataMessage('No data loaded', 'Saved snapshots were found, but no embedded booking data could be loaded.');
     }
   } catch(e) {
-    const localMsg = `Local preview — open the hosted app to load saved snapshots, or upload a CSV/XLSX directly.`;
-    const msg = isLocalPreview() ? localMsg : `Could not load saved snapshots: ${e.message}`;
-    setNoDataMessage('No data loaded', msg);
-    renderSnapListMessage(isLocalPreview() ? localMsg : `Failed to list snapshots: ${e.message}`, true);
-    const sl = document.getElementById('signin-link');
-    if (sl) sl.style.display = '';
+    setNoDataMessage('No data loaded', `Could not load saved snapshots: ${e.message}`);
+    renderSnapStoreDisconnected(`Failed to list snapshots: ${e.message}`);
   } finally {
     cloudSnapshotsLoading = false;
   }
@@ -3710,7 +3809,7 @@ async function autoLoadCloudSnapshots() {
 
 function renderCloudSnapList() {
   if (!cloudSnapshots.length) {
-    renderSnapListMessage('No saved snapshots yet.');
+    getSnapListEls().forEach(el => { el.innerHTML = '<div class="snap-list-message">No saved snapshots yet.</div>' + snapStoreFooter(); });
     return;
   }
   const html = [...cloudSnapshots].sort(compareRangeDesc).map(s => {
@@ -3729,7 +3828,7 @@ function renderCloudSnapList() {
       </div>
       <button class="btn secondary btn-snap-delete" onclick="deleteCloudSnapshot('${escAttr(s.name)}')">✕</button>
     </div>`;
-  }).join('');
+  }).join('') + snapStoreFooter();
   getSnapListEls().forEach(el => { el.innerHTML = html; });
   renderRangeComparePresetSelects();
 }
@@ -3825,14 +3924,11 @@ async function toggleSnapshotActive(name, checked) {
     return;
   }
 
-  // Need to fetch from worker
+  // Need to read from the snapshot folder
   const checkEl = document.querySelector(`[data-snap="${CSS.escape(name)}"]`);
   if (checkEl) checkEl.disabled = true;
   try {
-    const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshot/${encodeURIComponent(name)}`, { credentials: 'include' });
-    if (res.status === 401) { snapCloudMsg('Not signed in.', true); if (checkEl) { checkEl.checked = false; checkEl.disabled = false; } return; }
-    if (!res.ok) throw new Error(await res.text());
-    const html = await res.text();
+    const html = await readSnapFile(await getSnapStore(), `${name}.html`);
     const embedded = getEmbeddedData(html);
     if (!embedded) throw new Error('Snapshot has no embedded data');
     mergeEmbeddedSnapshot(name, embedded.rows, embedded.label, true);
@@ -3865,6 +3961,7 @@ async function saveCloudSnapshot() {
   const nameEl = document.getElementById('snap-cloud-name');
   const name = nameEl.value.trim();
   if (!name) { snapCloudMsg('Enter a name for the snapshot.', true); return; }
+  if (/[\/\\:]/.test(name) || name.startsWith('.')) { snapCloudMsg('Snapshot names cannot contain / \\ : or start with a dot.', true); return; }
   if (!allBookings.length) { snapCloudMsg('No data loaded.', true); return; }
 
   const btn = document.getElementById('snap-save-btn');
@@ -3884,17 +3981,9 @@ async function saveCloudSnapshot() {
       datasetCount: datasets.filter(ds => isDatasetSelected(ds)).length,
       dateRange: dr ? `${dateStr(dr.min)} to ${dateStr(dr.max)}` : null,
     };
-    const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshot/${encodeURIComponent(name)}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'X-Pulse-Meta': JSON.stringify(meta),
-      },
-      body: html,
-    });
-    if (res.status === 401) { snapCloudMsg('Not signed in.', true); return; }
-    if (!res.ok) throw new Error(await res.text());
+    const dir = await getSnapStore();
+    await writeSnapFile(dir, `${name}.html`, html);
+    await updateSnapIndex(dir, name, { savedAt: new Date().toISOString(), ...meta });
     snapCloudMsg(`Saved "${name}"`);
     nameEl.value = '';
     listCloudSnapshots();
@@ -3910,12 +3999,9 @@ async function deleteCloudSnapshot(name) {
   if (!confirm(`Delete snapshot "${name}"?`)) return;
   snapCloudMsg('');
   try {
-    const res = await fetch(`${PULSE_WORKER_URL}/pulse/snapshot/${encodeURIComponent(name)}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (res.status === 401) { snapCloudMsg('Not signed in.', true); return; }
-    if (!res.ok) throw new Error(await res.text());
+    const dir = await getSnapStore();
+    await dir.removeEntry(`${name}.html`);
+    await updateSnapIndex(dir, name, null);
     snapCloudMsg(`Deleted "${name}"`);
     listCloudSnapshots();
   } catch (e) {
